@@ -18,7 +18,6 @@ export async function getHistoricalMonthlyOHLCVData(req, res) {
   try {
     const historicalData = await axios(config);
     console.log(historicalData.data);
-    // const processedHoldings = sortHoldingData(portfolio.data.data)
     return res.json({ status: historicalData.data.status, data: historicalData.data.data });
   } catch (err) {
     console.log(err.response?.data ?? err);
