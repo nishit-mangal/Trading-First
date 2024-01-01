@@ -1,7 +1,9 @@
 import express from 'express'
-import { getHistoricalMonthlyOHLCVData, getHistoricalMonthlyOHLCVDataNifty } from '../controller/historicaldataController.js'
+import { compareNiftyWithStrategy, getHistoricalMonthlyOHLCVData, getHistoricalMonthlyOHLCVDataNifty, getNifty50IndexData } from '../controller/historicaldataController.js'
 
-export const hostoricalDataRouter = express.Router()
+export const historicalDataRouter = express.Router()
 
-hostoricalDataRouter.get('/monthly', getHistoricalMonthlyOHLCVData)
-hostoricalDataRouter.get('/nifty/monthly', getHistoricalMonthlyOHLCVDataNifty)
+historicalDataRouter.get('/monthly', getHistoricalMonthlyOHLCVData)
+historicalDataRouter.get('/nifty/monthly', getHistoricalMonthlyOHLCVDataNifty)
+historicalDataRouter.get('/nifty/index', getNifty50IndexData)
+historicalDataRouter.get('/graphs', compareNiftyWithStrategy)
