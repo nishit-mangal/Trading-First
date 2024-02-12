@@ -6,6 +6,7 @@ import {
   probOfNextMonthIncresingGivenPrevnIncrease,
   returnsForStrategyArray,
   generateStrategyDataAndcompareNifty,
+  fetchDataAndImplementstopLossStrategyDaily,
 } from "../handler/historicalDataHandler.js";
 
 export async function getHistoricalMonthlyOHLCVData(req, res) {
@@ -65,4 +66,9 @@ export async function compareNiftyWithStrategy(req, res) {
   return res.render("graphs", {
     data: strategyData,
   });
+}
+
+export async function stopLossStrategy(req, res){
+  const response = await fetchDataAndImplementstopLossStrategyDaily()
+  return res.json({data: response})
 }

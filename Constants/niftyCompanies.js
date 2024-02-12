@@ -29,7 +29,7 @@ export const niftyArray = [
   { name: "LT", isin: "INE018A01030" },
   { name: "M&M", isin: "INE101A01026" },
   { name: "MARUTI", isin: "INE585B01010" },
-  { name: "NESTLEIND", isin: "INE239A01016" },
+  { name: "NESTLEIND", isin: "INE239A01024" },
   { name: "NTPC", isin: "INE733E01010" },
   { name: "ONGC", isin: "INE213A01029" },
   { name: "POWERGRID", isin: "INE752E01010" },
