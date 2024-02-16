@@ -2,9 +2,10 @@ import { WebSocket } from "ws";
 import protobuf from "protobufjs";
 import axios from "axios";
 import { headers } from "../Constants/authorizationConst.js";
+// import {  } from "../Constants/constants.js";
 
 // const WebSocket = ws.WebSocketServer;
-
+let niftyArrayFromWebsocket = []
 let protobufRoot = null;
 
 const initProtobuf = async () => {
@@ -63,8 +64,14 @@ const connectWebSocket = async (wsUrl) => {
       let response = decodeProfobuf(data)
       // console.log(response.feeds["NSE_INDEX|Nifty Bank"].ltpc)
       // let bankNiftyFeed = response.feeds["NSE_INDEX|Nifty Bank"]
-      console.log("\nBank Nifty: ", response.feeds["NSE_INDEX|Nifty Bank"]?.ltpc.ltp)
-      console.log("Nifty 50: ", response.feeds["NSE_INDEX|Nifty 50"]?.ltpc.ltp)
+      // console.log("\nBank Nifty: ", response.feeds["NSE_INDEX|Nifty Bank"]?.ltpc.ltp)
+      console.log(Date(), "Nifty 50: ", response.feeds["NSE_INDEX|Nifty 50"]?.ltpc.ltp)
+      if(niftyArrayFromWebsocket.length >= 10){
+        console.log(niftyArrayFromWebsocket)
+        niftyArrayFromWebsocket = []
+      }
+      if(response.feeds["NSE_INDEX|Nifty 50"]?.ltpc.ltp!=undefined)
+        niftyArrayFromWebsocket.push(response.feeds["NSE_INDEX|Nifty 50"]?.ltpc.ltp)
       resolve(decodeProfobuf(data))
     });
 
@@ -91,10 +98,13 @@ export async function connectToWebsocket(req, res) {
   try {
     await initProtobuf(); // Initialize protobuf
     const wsUrl = await getMarketFeedUrl(); // Get the market feed URL
+    if(!wsUrl)
+      throw 'URL not generated to connect Websocket'
     console.log("URL generated Successfully", wsUrl);
     const wsS = await connectWebSocket(wsUrl); // Connect to the WebSocket
     return res.send(wsS)
   } catch (error) {
-    console.error("An error occurred:", error);
+    console.error(error);
+    return res.json({msg:error})
   }
 }
