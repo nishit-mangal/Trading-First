@@ -5,6 +5,7 @@ import { portfolioRouter } from "./routes/portfolioRoutes.js";
 import { historicalDataRouter } from "./routes/historicalDataRoutes.js";
 import path from 'path'
 import { websocketRouter } from "./routes/websocketRoutes.js";
+import { profitLossRouter } from "./routes/profitLossRouter.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use('/authorization', appAuthRouter)
 app.use("/user", userRouter);
 app.use('/portfolio', portfolioRouter)
 app.use('/historicalData', historicalDataRouter)
+app.use('/profitLoss', profitLossRouter)
 
 
 app.use('/webSocketConnection', websocketRouter)
