@@ -1,6 +1,7 @@
 import { headers } from "../Constants/authorizationConst.js";
 import { niftyArray } from "../Constants/niftyCompanies.js";
 import axios from "axios";
+import { callApiToGetScriptDataInADateRange } from "./apiContainer.js";
 
 export function filterHistoricalData(candles) {
   // console.log(candles)
@@ -65,23 +66,15 @@ async function callApiToGetNiftyData(to, from, candleTenure) {
     const to_date = to;
     const from_date = from;
 
-    let config = {
-      method: "get",
-      maxBodyLength: Infinity,
-      url: `https://api-v2.upstox.com/historical-candle/${instrument_key}/${interval}/${to_date}/${from_date}`,
-      headers: headers,
-    };
-
-    try {
-      const historicalData = await axios(config);
-      //   console.log("historical Data \n", historicalData.data.data.candles[0][0])
-      stock.monthlyData = historicalData.data.data.candles;
-      niftyDataArr.push(stock);
-    } catch (err) {
-      console.log(err.response?.data ?? err);
-      console.log("Error Occured For stock: ", stock);
-      return null;
-    }
+    let candleForStock = await callApiToGetScriptDataInADateRange(
+      instrument_key,
+      interval,
+      to_date,
+      from_date
+    );
+    if (!candleForStock) continue;
+    stock.monthlyData = candleForStock;
+    niftyDataArr.push(stock);
   }
   return niftyDataArr;
 }
@@ -193,14 +186,14 @@ export function tradingStrategy(
     let newPortfolio = [];
     let monthlyReturns = 0.0;
     prevPortfolio = portfolio[portfolio.length - 1];
-    console.log("Pre Portfolio:", prevPortfolio)
+    console.log("Pre Portfolio:", prevPortfolio);
 
     let thisMonthRet = rearrangePrevMonthPortfolio(
       prevPortfolio,
       bestStocks[0],
       companyReturnsMap
     );
-    console.log("This Month Perf: ", thisMonthRet)
+    console.log("This Month Perf: ", thisMonthRet);
 
     for (let i = 0; i < 20; i++) {
       monthlyReturns += thisMonthRet[i].return;
@@ -217,7 +210,7 @@ export function tradingStrategy(
     // console.log("Best Stocks: ")
     for (let i = 0; i < 6; i++) {
       newPortfolio.push(bestStocks[1][i]);
-      console.log(bestStocks[1][i])
+      console.log(bestStocks[1][i]);
     }
     portfolio.push(newPortfolio);
   }
@@ -260,8 +253,8 @@ export async function returnsForStrategyArray() {
 
   let dataSelectingStocks = bestPerformingStockInAMonth(response);
   let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
-  console.log("Best Performing Stocks", dataSelectingStocks.get('2024-1-1'))
-  console.log("Map Of company Returns TCS", mapOfCompanyReturns.get('TCS'))
+  console.log("Best Performing Stocks", dataSelectingStocks.get("2024-1-1"));
+  console.log("Map Of company Returns TCS", mapOfCompanyReturns.get("TCS"));
   let arrayOfDataSelectingStocks = Array.from(
     dataSelectingStocks.entries()
   ).reverse();
@@ -276,7 +269,7 @@ export async function returnsForStrategyArray() {
   let start = 100;
   let i = 1;
   let count = 0;
-  let avgRet = 0
+  let avgRet = 0;
   for (let monthReturn of portfolio) {
     // if(monthReturn<-10){
     //   monthReturn = -10
@@ -285,14 +278,14 @@ export async function returnsForStrategyArray() {
 
     let ret = 1 + monthReturn;
     start *= ret;
-    if (monthReturn<=-0.10) {
+    if (monthReturn <= -0.1) {
     }
     count++;
-    avgRet+=monthReturn
+    avgRet += monthReturn;
     console.log(i, "Start: ", start, "Month Ret: ", monthReturn);
     i++;
   }
-  console.log("Avg Return:", avgRet/count)
+  console.log("Avg Return:", avgRet / count);
   console.log("Return", start);
   console.log("Count", count);
   return portfolio.splice(portfolio.length - 112, 112);
@@ -338,21 +331,17 @@ export async function fetchNiftyMonthlyData() {
   const to_date = "2023-11-03";
   const from_date = "2013-11-04";
 
-  let config = {
-    method: "get",
-    maxBodyLength: Infinity,
-    url: `https://api-v2.upstox.com/historical-candle/${instrument_key}/${interval}/${to_date}/${from_date}`,
-    headers: headers,
-  };
-
-  try {
-    const historicalData = await axios(config);
-    // console.log(historicalData.data.data);
-    return historicalData.data.data;
-  } catch (err) {
-    console.log(err.response?.data ?? err);
-    return null;
-  }
+  let niftyData = await callApiToGetScriptDataInADateRange(instrument_key, interval, to_date, from_date)
+  
+  return niftyData ? niftyData : null
+  // try {
+  //   const historicalData = await axios(config);
+  //   // console.log(historicalData.data.data);
+  //   return historicalData.data.data;
+  // } catch (err) {
+  //   console.log(err.response?.data ?? err);
+  //   return null;
+  // }
 }
 
 async function fetchNiftyDataAndReturnMonthlyReturns() {
@@ -443,7 +432,7 @@ function stopLossTradingStrategy(
       mapOfCompanyReturnsWeekly
     );
 
-    if(response.stopLossWasHit){
+    if (response.stopLossWasHit) {
       portfolio.push(newPortfolio);
     }
 
@@ -487,9 +476,8 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
   let responseObj = {
     stopLossWasHit: false,
     percentLoss: 0.0,
-    opportunityCost: 0.0
+    opportunityCost: 0.0,
   };
-
 
   for (let i = 0; i < prevPortfolio.length; i++) {
     monthlyReturnsArray = weeklyReturnsMap.get(prevPortfolio[i].name);
@@ -511,7 +499,6 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
     weeklyReturns.push(tempReturnArr);
   }
 
-  
   let totalWeeklyReturns = 0;
   let numOfWeeks = weeklyReturns[0].length;
   let j = 0;
@@ -521,17 +508,17 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
       netWeeklyReturns += weeklyReturns[i][j];
     }
     netWeeklyReturns /= 20;
-    console.log()
+    console.log();
     totalWeeklyReturns += netWeeklyReturns;
-    
-    if(totalWeeklyReturns<-10.0){
-      responseObj.stopLossWasHit = true
-      responseObj.percentLoss = totalWeeklyReturns
-      console.log("Stop loss was hit for:", month)
+
+    if (totalWeeklyReturns < -10.0) {
+      responseObj.stopLossWasHit = true;
+      responseObj.percentLoss = totalWeeklyReturns;
+      console.log("Stop loss was hit for:", month);
       // console.log("Weekly Array", weeklyReturns);
-      console.log("Actual Loss:", totalWeeklyReturns)
-      console.log("Weekly Loss:", netWeeklyReturns)
-      return responseObj
+      console.log("Actual Loss:", totalWeeklyReturns);
+      console.log("Weekly Loss:", netWeeklyReturns);
+      return responseObj;
     }
     j++;
   }

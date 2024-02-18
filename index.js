@@ -6,12 +6,14 @@ import { historicalDataRouter } from "./routes/historicalDataRoutes.js";
 import path from 'path'
 import { websocketRouter } from "./routes/websocketRoutes.js";
 import { profitLossRouter } from "./routes/profitLossRouter.js";
+import { orderRouter } from "./routes/orderRoutes.js";
 
 const app = express();
 
 const port = 8000;
 
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json())
 
 app.set('view engine','ejs')
 app.set('views', path.resolve('./views'))
@@ -21,6 +23,7 @@ app.use("/user", userRouter);
 app.use('/portfolio', portfolioRouter)
 app.use('/historicalData', historicalDataRouter)
 app.use('/profitLoss', profitLossRouter)
+app.use('/orders', orderRouter)
 
 
 app.use('/webSocketConnection', websocketRouter)
