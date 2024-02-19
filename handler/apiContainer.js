@@ -55,3 +55,44 @@ export async function callApiToGetFundAndMargin() {
     return null;
   }
 }
+
+export async function callApiToBuyStocks(data) {
+  headers["Content-Type"] = "application/json";
+  let config = {
+    method: "post",
+    maxBodyLength: Infinity,
+    url: "https://api.upstox.com/v2/order/place",
+    headers: headers,
+    data,
+  };
+  try {
+    const buyResponse = await axios(config);
+    // console.log(buyResponse.data.data);
+    return buyResponse.data.data;
+  } catch (err) {
+    console.log(err.response?.data ?? err);
+    return null;
+  }
+}
+
+export async function callApiToCheckOrderStatus(orderId) {
+  let params = {
+    order_id:orderId
+  }
+  headers["Content-Type"] = "application/json";
+  let config = {
+    method: "get",
+    maxBodyLength: Infinity,
+    url: "https://api.upstox.com/v2/order/history",
+    headers: headers,
+    params
+  };
+  try {
+    const orderHistory = await axios(config);
+    // console.log(orderHistory.data.data);
+    return orderHistory.data.data;
+  } catch (err) {
+    console.log(err.response?.data ?? err);
+    return null;
+  }
+}
