@@ -1,4 +1,5 @@
 import express from "express";
+import cors from 'cors'
 import { appAuthRouter } from "./routes/authorizationRoutes.js";
 import { userRouter } from "./routes/userRoutes.js";
 import { portfolioRouter } from "./routes/portfolioRoutes.js";
@@ -14,6 +15,7 @@ const port = 8000;
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json())
+app.use(cors())
 
 app.set('view engine','ejs')
 app.set('views', path.resolve('./views'))

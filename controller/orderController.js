@@ -11,16 +11,20 @@ export async function buyStock(req, resp) {
     ) {
       throw { code: "400", msg: "Invalid Input" };
     }
-
     let buyResponse = await tradeStockByModifyingReq(reqObj);
     if(!buyResponse)
       throw { code: "502", msg: "Unable to process Order." };
+    // let buyResponse = {
+    //   order_id: "240219000660730",
+    //   status: "complete",
+    // };
     return resp.json({
       status: "Success",
-      code: "200",
+      statusCode: "200",
       data: buyResponse,
     });
   } catch (err) {
+    console.log(err.msg ?? err);
     return resp.json({
       status: "Error",
       statusCode: err.code ?? "500",

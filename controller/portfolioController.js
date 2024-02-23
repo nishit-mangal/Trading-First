@@ -15,8 +15,6 @@ export async function getHoldings(req, res) {
     
     let i=0
     for(let stock of filteredHoldings){
-      if(i==0)
-        console.log(stock)
       i++
       //fetch 1 year Data
       let oneYearData = await callApiToGetScriptDataInADateRange(stock.instrumentToken, 'day', to_date, from_date)
