@@ -1,5 +1,6 @@
 import axios from "axios";
-import { headers } from "../Constants/authorizationConst.js";
+import { accessToken, code, headers } from "../Constants/authorizationConst.js";
+import {} from 'dotenv/config'
 
 export async function callApiToGetHoldings() {
   let config = {
@@ -77,21 +78,52 @@ export async function callApiToBuyStocks(data) {
 
 export async function callApiToCheckOrderStatus(orderId) {
   let params = {
-    order_id:orderId
-  }
+    order_id: orderId,
+  };
   headers["Content-Type"] = "application/json";
   let config = {
     method: "get",
     maxBodyLength: Infinity,
     url: "https://api.upstox.com/v2/order/history",
     headers: headers,
-    params
+    params,
   };
   try {
     const orderHistory = await axios(config);
     // console.log(orderHistory.data.data);
     return orderHistory.data.data;
   } catch (err) {
+    console.log(err.response?.data ?? err);
+    return null;
+  }
+}
+
+export async function callApiToGenerateAccessToken() {
+  const headers = {
+    accept: "application/json",
+    "Api-Version": "2.0",
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+  const data = {
+    code,
+    client_id: process.env.API_KEY,
+    client_secret: process.env.API_SECRET,
+    redirect_uri: process.env.REDIRECT_URI,
+    grant_type: "authorization_code",
+  };
+  let config = {
+    method: "post",
+    maxBodyLength: Infinity,
+    url: `${process.env.BASE_URL}/login/authorization/token`,
+    headers: headers,
+    data,
+  };
+  try{
+    const response = await axios(config)
+    // console.log(response.data);
+    console.log("\nAccess Token before: ", accessToken)
+    return response.data.access_token
+  }catch(err){
     console.log(err.response?.data ?? err);
     return null;
   }

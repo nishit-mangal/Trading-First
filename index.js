@@ -8,10 +8,11 @@ import path from 'path'
 import { websocketRouter } from "./routes/websocketRoutes.js";
 import { profitLossRouter } from "./routes/profitLossRouter.js";
 import { orderRouter } from "./routes/orderRoutes.js";
+import {} from  'dotenv/config'
 
 const app = express();
 
-const port = 8000;
+const port = process.env.PORT ?? 8000;
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json())
@@ -29,5 +30,4 @@ app.use('/orders', orderRouter)
 
 
 app.use('/webSocketConnection', websocketRouter)
-// https://api.upstox.com/v2/login/authorization/dialog?client_id=6146dafc-cc80-4cb7-98c5-c667566fd9b3&redirect_uri=https://127.0.0.1&state=code
 app.listen(port, () => console.log(`Listening on Port ${port}...`));
