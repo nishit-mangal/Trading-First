@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id Int @id @default(autoincrement())
+  order_id String @unique
+  trading_symbol String
+  quantity Int
+  average_price Decimal
+  status String
+  order_type String
+  validity String
+  order_timestamp DateTime
+}

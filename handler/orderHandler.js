@@ -3,6 +3,9 @@ import {
   callApiToBuyStocks,
   callApiToCheckOrderStatus,
 } from "./apiContainer.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient()
 
 export async function tradeStockByModifyingReq(req) {
   //   console.log("req in buyStockByModifyingReq", req);
@@ -72,5 +75,17 @@ async function checkOrderStatus(orderId) {
  * @returns {orderObject []}
  */
 export async function fetchData(pageNumber){
-
+  let response = await prisma.order.create({
+    data:{
+      order_id:"3452",
+      order_timestamp: new Date(),
+      order_type:"234r",
+      quantity: 3,
+      status:"adf",
+      trading_symbol:"df",
+      validity:"DAY",
+      average_price:567.234
+    }
+  })
+  console.log(response)
 }
