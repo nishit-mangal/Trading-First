@@ -1,3 +1,4 @@
+import { HttpCode } from "../Constants/constants.js";
 import {
   callApiToBuyStocks,
   callApiToCheckOrderStatus,
@@ -30,7 +31,7 @@ export async function tradeStockByModifyingReq(req) {
      * buyResponse = { order_id: '240219000611411' }
      */
     let buyResponse = await callApiToBuyStocks(req);
-    if (!buyResponse) throw { code: "502", msg: "Unable to process Order." };
+    if (!buyResponse) throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to process Order." };
 
     //checkStatus of order
     let status = await checkOrderStatus(buyResponse.order_id)
@@ -63,4 +64,13 @@ async function checkOrderStatus(orderId) {
    */
   let latestStatus = statusArr[statusArr.length - 1];
   return latestStatus?.status;
+}
+
+/**
+ * 
+ * @param {number} pageNumber 
+ * @returns {orderObject []}
+ */
+export async function fetchData(pageNumber){
+
 }
