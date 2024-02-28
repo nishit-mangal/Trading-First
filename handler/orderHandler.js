@@ -1,7 +1,11 @@
+import { HttpCode, pageSize } from "../Constants/constants.js";
 import {
   callApiToBuyStocks,
   callApiToCheckOrderStatus,
 } from "./apiContainer.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export async function tradeStockByModifyingReq(req) {
   //   console.log("req in buyStockByModifyingReq", req);
@@ -30,7 +34,7 @@ export async function tradeStockByModifyingReq(req) {
      * buyResponse = { order_id: '240219000611411' }
      */
     let buyResponse = await callApiToBuyStocks(req);
-    if (!buyResponse) throw { code: "502", msg: "Unable to process Order." };
+    if (!buyResponse) throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to process Order." };
 
     //checkStatus of order
     let status = await checkOrderStatus(buyResponse.order_id)
@@ -51,8 +55,8 @@ async function checkOrderStatus(orderId) {
    */
   let statusArr = await callApiToCheckOrderStatus(orderId);
   if (!statusArr || statusArr.length == 0) {
-    console.log("Can not get Status Array. Unable to get stauts of ", orderId);
-    return null;
+  console.log("Can not get Status Array. Unable to get stauts of ", orderId);
+  return null;
   }
 
   /**
@@ -62,5 +66,52 @@ async function checkOrderStatus(orderId) {
    * }
    */
   let latestStatus = statusArr[statusArr.length - 1];
+  putDatainDB(latestStatus);
   return latestStatus?.status;
+}
+
+/**
+ *
+ * @param {number} pageNumber
+ * @returns {Promise<[]>}
+ */
+export async function fetchData(pageNumber) {
+  try {
+    let response = await prisma.order.findMany({
+      orderBy: [
+        {
+          order_timestamp: "desc",
+        },
+        { id: "desc" },
+      ],
+      take: pageSize,
+      skip: (pageNumber - 1) * pageSize,
+    });
+    // console.log(response);
+    return response;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+}
+
+async function putDatainDB(latestStatus) {
+  try {
+    const result = await prisma.order.create({
+      data: {
+        order_id: latestStatus.order_id,
+        trading_symbol: latestStatus.trading_symbol,
+        quantity: latestStatus.quantity,
+        average_price: latestStatus.average_price,
+        status: latestStatus.status,
+        order_type: latestStatus.order_type,
+        validity: latestStatus.validity,
+        order_timestamp: new Date(latestStatus.order_timestamp),
+      },
+    });
+    // console.log(result);
+  } catch (err) {
+    console.log("Error Occured for:\n", latestStatus);
+    console.log(err);
+  }
 }
