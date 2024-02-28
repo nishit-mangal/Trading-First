@@ -39,14 +39,14 @@ export async function generateOrderHistory(req, resp) {
     let pageNo = parseInt(req.params.pageNumber);
     if (!pageNo) throw { code: HttpCode.BAD_REQUEST, msg: "Invalid Input" };
 
-    let response = fetchData(pageNo);
+    let response = await fetchData(pageNo);
     if (!response)
       throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to fetch orders." };
 
     return resp.json({
       status: "Success",
       statusCode: HttpCode.SUCCESS,
-      data: "JBASDJF",
+      data: response,
     });
   } catch (err) {
     console.log(err.msg ?? err);

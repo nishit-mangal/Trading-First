@@ -12,7 +12,7 @@ model Order {
   order_id String @unique
   trading_symbol String
   quantity Int
-  average_price Decimal
+  average_price Decimal @db.Decimal(10, 2)
   status String
   order_type String
   validity String

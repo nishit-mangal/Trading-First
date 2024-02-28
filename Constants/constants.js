@@ -1,6 +1,6 @@
 export let financialYear = '2122'
 
-export const pageSize = 15
+export const pageSize = 5
 
 export const HttpCode = {
     SUCCESS: '200',
