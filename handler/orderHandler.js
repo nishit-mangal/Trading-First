@@ -34,10 +34,11 @@ export async function tradeStockByModifyingReq(req) {
      * buyResponse = { order_id: '240219000611411' }
      */
     let buyResponse = await callApiToBuyStocks(req);
-    if (!buyResponse) throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to process Order." };
+    if (!buyResponse)
+      throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to process Order." };
 
     //checkStatus of order
-    let status = await checkOrderStatus(buyResponse.order_id)
+    let status = await checkOrderStatus(buyResponse.order_id);
     // let status = await checkOrderStatus("240219000611411");
     buyResponse.status = status ?? null;
     return buyResponse;
@@ -55,8 +56,8 @@ async function checkOrderStatus(orderId) {
    */
   let statusArr = await callApiToCheckOrderStatus(orderId);
   if (!statusArr || statusArr.length == 0) {
-  console.log("Can not get Status Array. Unable to get stauts of ", orderId);
-  return null;
+    console.log("Can not get Status Array. Unable to get stauts of ", orderId);
+    return null;
   }
 
   /**
@@ -97,14 +98,14 @@ export async function fetchData(pageNumber) {
 
 async function putDatainDB(latestStatus) {
   try {
-    const result = await prisma.order.create({
+    await prisma.order.create({
       data: {
         order_id: latestStatus.order_id,
         trading_symbol: latestStatus.trading_symbol,
         quantity: latestStatus.quantity,
         average_price: latestStatus.average_price,
         status: latestStatus.status,
-        order_type: latestStatus.order_type,
+        order_type: latestStatus.transaction_type,
         validity: latestStatus.validity,
         order_timestamp: new Date(latestStatus.order_timestamp),
       },

@@ -10,7 +10,7 @@ export async function buyStock(req, resp) {
       !reqObj.instrument_token ||
       !reqObj.transaction_type
     ) {
-      throw { code: HttpCode.BAD_REQUEST, msg: "Invalid Input" };
+      throw { code: HttpCode.BAD_REQUEST, msg: "Invalid Input in fn:buyStock" };
     }
     let buyResponse = await tradeStockByModifyingReq(reqObj);
     if (!buyResponse)
@@ -37,7 +37,7 @@ export async function buyStock(req, resp) {
 export async function generateOrderHistory(req, resp) {
   try {
     let pageNo = parseInt(req.params.pageNumber);
-    if (!pageNo) throw { code: HttpCode.BAD_REQUEST, msg: "Invalid Input" };
+    if (!pageNo) throw { code: HttpCode.BAD_REQUEST, msg: "Invalid Input in fn:generateOrderHistory" };
 
     let response = await fetchData(pageNo);
     if (!response)
