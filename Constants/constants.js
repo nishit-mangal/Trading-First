@@ -8,3 +8,18 @@ export const HttpCode = {
     BAD_GATEWAY: '502',
     BAD_REQUEST: '400'
 }
+
+export const CACHE_NAMES = {
+    FUND_DETAILS: {
+        NAME:"FUND_DETAILS",
+        TTL:10
+    },
+    STOCK:{
+        NAME:"STOCK",
+        TTL:1000
+    },
+    PORTFOLIO_HOLDINGS:{
+        NAME:"PORTFOLIO_HOLDINGS",
+        TTL:1000
+    },
+}

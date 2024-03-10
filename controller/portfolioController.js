@@ -1,13 +1,37 @@
 import { get1YearHighForAStock, sortHoldingData } from "../handler/portfolioHandler.js";
 import { callApiToGetHoldings, callApiToGetScriptDataInADateRange } from "../handler/apiContainer.js";
+import { client } from "../Clients/clients.js";
+import { CACHE_NAMES } from "../Constants/constants.js";
 
 export async function getHoldings(req, res) {
   try {
-    let portfolioHoldings = await callApiToGetHoldings();
+    let portfolioHoldings = []
+    //check if porfolioData Exists in cache
+    let isDataInCache = await client.exists(
+      `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`
+    );
+
+    //if yes than set the portfolioHoldings According to it
+    if (isDataInCache == 1) {
+      console.log(`Cache Hit for ${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`);
+      let cacheData = await client.get(
+        `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`
+      );
+      portfolioHoldings = JSON.parse(cacheData)
+    }else{
+      //else fetch it from API call
+      portfolioHoldings = await callApiToGetHoldings();
+      
+      //store it in cache
+      await client.setex( `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`, CACHE_NAMES.PORTFOLIO_HOLDINGS.TTL, JSON.stringify(portfolioHoldings), ()=>console.log(`${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME} Details set in Cache`))
+    } 
+
+    // console.log("Portfolio Holdings",portfolioHoldings);
+
     if (!portfolioHoldings)
       throw { code: "502", msg: "Unable to fetch portfolio holdings." };
 
-    let filteredHoldings = sortHoldingData(portfolioHoldings);
+    let filteredHoldings = await sortHoldingData(portfolioHoldings);
     // console.log(filteredHoldings);
 
     let to_date = (new Date().toISOString().split("T")[0]);
@@ -16,6 +40,11 @@ export async function getHoldings(req, res) {
     let i=0
     for(let stock of filteredHoldings){
       i++
+      //check in cache if oneYearMaxExists. It will only exist if stock data was populated from cache
+      if(stock.oneYearMax){
+        continue
+      }
+
       //fetch 1 year Data
       let oneYearData = await callApiToGetScriptDataInADateRange(stock.instrumentToken, 'day', to_date, from_date)
       if(!oneYearData){
@@ -32,6 +61,10 @@ export async function getHoldings(req, res) {
       let percentage = Math.floor(((stock.closingPrice - stock.oneYearMax)/stock.closingPrice)*100)
       // console.log(`Percentage for ${stock.companyName} is ${percentage}`)
       stock.percentFromMax = percentage
+
+      
+    //put the data in cache too with expiration time
+    await client.setex(`${CACHE_NAMES.STOCK.NAME}:${stock.companyName}`, CACHE_NAMES.STOCK.TTL, JSON.stringify(stock), ()=>console.log(`${CACHE_NAMES.STOCK.NAME}:${stock.companyName} Details set in Cache`));
     }
 
     filteredHoldings.sort((a, b)=>{return a.percentFromMax-b.percentFromMax})
