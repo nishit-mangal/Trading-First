@@ -12,14 +12,14 @@ export const HttpCode = {
 export const CACHE_NAMES = {
     FUND_DETAILS: {
         NAME:"FUND_DETAILS",
-        TTL:10
+        TTL:100
     },
     STOCK:{
         NAME:"STOCK",
-        TTL:1000
+        TTL:300
     },
     PORTFOLIO_HOLDINGS:{
         NAME:"PORTFOLIO_HOLDINGS",
-        TTL:1000
+        TTL:300
     },
 }
