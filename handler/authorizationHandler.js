@@ -1,9 +1,9 @@
 import { HttpCode } from "../Constants/constants.js";
 import { callApiToGenerateAccessToken } from "./apiContainer.js";
 
-export async function generateAccessTokenHandler() {
-  const accessToken = await callApiToGenerateAccessToken();
-  if (!accessToken) throw { code: HttpCode.BAD_GATEWAY, msg: "Access Token Not generated" };
+export async function generateAccessTokenHandler(code) {
+  const accessToken = await callApiToGenerateAccessToken(code);
+  if (!accessToken) return null;
   console.log("\nNew Access Token: \n", accessToken);
-  return true;
+  return accessToken;
 }

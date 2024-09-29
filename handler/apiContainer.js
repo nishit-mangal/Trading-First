@@ -1,5 +1,5 @@
 import axios from "axios";
-import { accessToken, code, headers } from "../Constants/authorizationConst.js";
+import { accessToken, headers } from "../Constants/authorizationConst.js";
 import {} from 'dotenv/config'
 
 export async function callApiToGetHoldings() {
@@ -98,14 +98,14 @@ export async function callApiToCheckOrderStatus(orderId) {
   }
 }
 
-export async function callApiToGenerateAccessToken() {
+export async function callApiToGenerateAccessToken(recivedCode) {
   const headers = {
     accept: "application/json",
     "Api-Version": "2.0",
     "Content-Type": "application/x-www-form-urlencoded",
   };
   const data = {
-    code,
+    code:recivedCode,
     client_id: process.env.API_KEY,
     client_secret: process.env.API_SECRET,
     redirect_uri: process.env.REDIRECT_URI,

@@ -1,17 +1,16 @@
-import { accessToken, code } from "../Constants/authorizationConst.js";
 import {} from "dotenv/config";
 import { generateAccessTokenHandler } from "../handler/authorizationHandler.js";
 import { HttpCode } from "../Constants/constants.js";
-// TODO: write a code to save access token. Write it in a manner that the value is set on server start (if available)
-// function setAccessToken(token){
-//     accessToken = token
-// }
-// function getAccessToken(){
-//     return accessToken
-// }
+
 export async function generateAccessToken(req, res) {
   try {
-    let response = await generateAccessTokenHandler();
+    if(!req.query.code)
+      throw 'Code Not Received'
+
+    let newAccessCode = await generateAccessTokenHandler(req.query.code);
+    if(!newAccessCode)
+      throw 'Code Not Generated'
+
     return res.json({
       status: "Success",
       statusCode: HttpCode.SUCCESS,
