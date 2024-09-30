@@ -5,6 +5,7 @@ import { CACHE_NAMES } from "../Constants/constants.js";
 
 export async function getHoldings(req, res) {
   try {
+    let accessToken = req.headers['upstox-access-token'];
     let portfolioHoldings = []
     //check if porfolioData Exists in cache
     let isDataInCache = await client.exists(
@@ -17,13 +18,13 @@ export async function getHoldings(req, res) {
       let cacheData = await client.get(
         `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`
       );
-      portfolioHoldings = JSON.parse(cacheData)
+      portfolioHoldings = JSON.parse(cacheData);
     }else{
       //else fetch it from API call
-      portfolioHoldings = await callApiToGetHoldings();
-      
+      portfolioHoldings = await callApiToGetHoldings(accessToken);
       //store it in cache
-      await client.setex( `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`, CACHE_NAMES.PORTFOLIO_HOLDINGS.TTL, JSON.stringify(portfolioHoldings), ()=>console.log(`${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME} Details set in Cache`))
+      if(portfolioHoldings)
+        await client.setex( `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`, CACHE_NAMES.PORTFOLIO_HOLDINGS.TTL, JSON.stringify(portfolioHoldings), ()=>console.log(`${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME} Details set in Cache`))
     } 
 
     // console.log("Portfolio Holdings",portfolioHoldings);

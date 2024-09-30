@@ -34,6 +34,7 @@ export async function getUserProfile(req, res) {
 
 export async function getFundDetails(req, res) {  
   try {
+    let accessToken = req.headers['upstox-access-token'];
     let isDataInCache = await client.exists(CACHE_NAMES.FUND_DETAILS.NAME);
     if (isDataInCache == 1) {
       console.log(`Cache Hit for ${CACHE_NAMES.FUND_DETAILS.NAME}`);
@@ -41,7 +42,7 @@ export async function getFundDetails(req, res) {
       return res.json(JSON.parse(cacheData));
     }
 
-    let fundDetails = await callApiToGetFundAndMargin();
+    let fundDetails = await callApiToGetFundAndMargin(accessToken);
     if (!fundDetails)
       throw { code: "502", msg: "Unable to fetch fund details." };
 

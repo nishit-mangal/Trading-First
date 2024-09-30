@@ -2,7 +2,10 @@ import axios from "axios";
 import { accessToken, headers } from "../Constants/authorizationConst.js";
 import {} from 'dotenv/config'
 
-export async function callApiToGetHoldings() {
+export async function callApiToGetHoldings(accessToken) {
+  if(accessToken)
+    headers["Authorization"] = accessToken;
+
   let config = {
     method: "get",
     maxBodyLength: Infinity,
@@ -28,7 +31,7 @@ export async function callApiToGetScriptDataInADateRange(
     method: "get",
     maxBodyLength: Infinity,
     url: `https://api-v2.upstox.com/historical-candle/${instrument_key}/${interval}/${to_date}/${from_date}`,
-    headers: headers,
+    headers
   };
 
   try {
@@ -40,12 +43,15 @@ export async function callApiToGetScriptDataInADateRange(
   }
 }
 
-export async function callApiToGetFundAndMargin() {
+export async function callApiToGetFundAndMargin(accessToken) {
+  if(accessToken)
+    headers["Authorization"] = accessToken;
+
   let config = {
     method: "get",
     maxBodyLength: Infinity,
     url: "https://api.upstox.com/v2/user/get-funds-and-margin",
-    headers: headers,
+    headers
   };
 
   try {
@@ -57,7 +63,9 @@ export async function callApiToGetFundAndMargin() {
   }
 }
 
-export async function callApiToBuyStocks(data) {
+export async function callApiToBuyStocks(data, accessToken) {
+  if(accessToken)
+    headers["Authorization"] = accessToken;
   headers["Content-Type"] = "application/json";
   let config = {
     method: "post",
@@ -76,11 +84,13 @@ export async function callApiToBuyStocks(data) {
   }
 }
 
-export async function callApiToCheckOrderStatus(orderId) {
+export async function callApiToCheckOrderStatus(orderId, accessToken) {
+  if(accessToken)
+    headers["Authorization"] = accessToken;
+  headers["Content-Type"] = "application/json";
   let params = {
     order_id: orderId,
   };
-  headers["Content-Type"] = "application/json";
   let config = {
     method: "get",
     maxBodyLength: Infinity,

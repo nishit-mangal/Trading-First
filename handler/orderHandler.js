@@ -7,7 +7,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function tradeStockByModifyingReq(req) {
+export async function tradeStockByModifyingReq(req, accessToken) {
   //   console.log("req in buyStockByModifyingReq", req);
   /*{
   "quantity": 1,
@@ -33,12 +33,12 @@ export async function tradeStockByModifyingReq(req) {
     /**
      * buyResponse = { order_id: '240219000611411' }
      */
-    let buyResponse = await callApiToBuyStocks(req);
+    let buyResponse = await callApiToBuyStocks(req, accessToken);
     if (!buyResponse)
       throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to process Order." };
 
     //checkStatus of order
-    let status = await checkOrderStatus(buyResponse.order_id);
+    let status = await checkOrderStatus(buyResponse.order_id, accessToken);
     // let status = await checkOrderStatus("240219000611411");
     buyResponse.status = status ?? null;
     return buyResponse;
@@ -48,13 +48,13 @@ export async function tradeStockByModifyingReq(req) {
   }
 }
 
-async function checkOrderStatus(orderId) {
+async function checkOrderStatus(orderId, accessToken) {
   if (!orderId) return null;
 
   /**
    * statusArr = [{}, {}]
    */
-  let statusArr = await callApiToCheckOrderStatus(orderId);
+  let statusArr = await callApiToCheckOrderStatus(orderId, accessToken);
   if (!statusArr || statusArr.length == 0) {
     console.log("Can not get Status Array. Unable to get stauts of ", orderId);
     return null;

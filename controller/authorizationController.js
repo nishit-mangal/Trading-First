@@ -14,7 +14,7 @@ export async function generateAccessToken(req, res) {
     return res.json({
       status: "Success",
       statusCode: HttpCode.SUCCESS,
-      data: "AccessToken Successfully updated",
+      data: newAccessCode,
     });
   } catch (err) {
     console.log(err.msg ?? err);

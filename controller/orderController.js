@@ -3,6 +3,7 @@ import { fetchData, tradeStockByModifyingReq } from "../handler/orderHandler.js"
 
 export async function buyStock(req, resp) {
   try {
+    let accessToken = req.headers['upstox-access-token'];    
     let reqObj = req.body;
     if (
       !reqObj ||
@@ -12,7 +13,7 @@ export async function buyStock(req, resp) {
     ) {
       throw { code: HttpCode.BAD_REQUEST, msg: "Invalid Input in fn:buyStock" };
     }
-    let buyResponse = await tradeStockByModifyingReq(reqObj);
+    let buyResponse = await tradeStockByModifyingReq(reqObj,accessToken);
     if (!buyResponse)
       throw { code: HttpCode.BAD_GATEWAY, msg: "Unable to process Order." };
     // let buyResponse = {
