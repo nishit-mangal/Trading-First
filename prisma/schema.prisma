@@ -35,9 +35,3 @@ model users {
   username     String? @db.VarChar(255)
   phone_number String? @db.VarChar(255)
 }
-
-model constants{
-  id           BigInt  @id @default(autoincrement())
-  variable_name String
-  value String
-}
