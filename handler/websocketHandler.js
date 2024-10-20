@@ -3,9 +3,10 @@ import protobuf from "protobufjs";
 import axios from "axios";
 import { WebSocket } from "ws";
 import { wss } from "../index.js";
+import { clientSubscriptionInstance } from "../Utility/classes.js";
 
 let protobufRoot = null;
-
+let ws1 = null;
 export const initProtobuf = async () => {
   protobufRoot = await protobuf.load("./Constants/MarketDataFeed.proto");
   console.log("Protobuf part initialization complete");
@@ -29,32 +30,20 @@ export async function getMarketFeedUrl() {
 }
 
 export const connectWebSocket = async (wsUrl) => {
+  if(ws1)
+    return ("Already connected to Upstox")
+  
   return new Promise((resolve, reject) => {
-    const ws1 = new WebSocket(wsUrl, {
+    ws1 = new WebSocket(wsUrl, {
       headers: headers,
       followRedirects: true,
     });
 
     // WebSocket event handlers
-    ws1.on("open", () => {
+    ws1.on("open", async () => {
       console.log("connected");
-      // resolve(ws1); // Resolve the promise once connected
-
-      /**
-       * Set a timeout to send a subscription message after 1 second.
-       *  This is to tell upstox what instruments the user wants to subscribe to.
-       * If the instrumentKeys are dynamic then put something like setTimeout
-       * */        
-      const data = {
-        guid: "somegud",
-        method: "sub",
-        data: {
-          mode: "ltpc",
-          instrumentKeys: ["NSE_EQ|INE002A01018", "NSE_INDEX|Nifty 50"],
-        },
-      };
-      ws1.send(Buffer.from(JSON.stringify(data)));
-      
+      await subscribeToTicker();
+      // resolve(ws1); // Resolve the promise once connected      
     });
 
     ws1.on("close", () => {
@@ -64,16 +53,10 @@ export const connectWebSocket = async (wsUrl) => {
     ws1.on("message", (data) => {
       let response = decodeProfobuf(data);
       console.log(response);
-      console.log(
-        Date(),
-        "Bank Nifty: ",
-        response.feeds["NSE_INDEX|Nifty 50"]?.ltpc.ltp
-      );
-      console.log(
-        Date(),
-        "Jio: ",
-        response.feeds["NSE_EQ|INE002A01018"]?.ltpc.ltp
-      );
+      
+      for(const key in response.feeds){
+        console.log(key)
+      }
 
       wss.clients.forEach((client) => {
         console.log("Server code");
@@ -114,4 +97,31 @@ const decodeProfobuf = (buffer) => {
     "com.upstox.marketdatafeeder.rpc.proto.FeedResponse"
   );
   return FeedResponse.decode(buffer);
+};
+
+// Function to subscribe to a ticker symbol via the Upstox WebSocket
+export const subscribeToTicker = async () => {
+  if(!ws1 || !ws1.readyState === WebSocket.OPEN){
+    console.log("A new connection was built with the client but no connection exist with Upstox. \nMaking Upstox Connection")
+    
+    await initProtobuf(); // Initialize protobuf
+    
+    const wsUrl = await getMarketFeedUrl(); // Get the market feed URL
+    if(!wsUrl)
+      throw 'URL not generated to connect Websocket'
+    
+    console.log("URL generated Successfully", wsUrl);
+    
+    await connectWebSocket(wsUrl); // Connect to the WebSocket    
+  }
+  console.log("The new subscription Array is", clientSubscriptionInstance.getArrayOfActiveTickers())
+  const data = {
+    guid: "somegud",
+    method: "sub",
+    data: {
+      mode: "ltpc",
+      instrumentKeys: clientSubscriptionInstance.getArrayOfActiveTickers(), // Subscribe to the ticker symbol
+    },
+  };
+  ws1.send(Buffer.from(JSON.stringify(data)));
 };

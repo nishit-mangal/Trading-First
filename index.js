@@ -9,6 +9,9 @@ import { websocketRouter } from "./routes/websocketRoutes.js";
 import { profitLossRouter } from "./routes/profitLossRouter.js";
 import { orderRouter } from "./routes/orderRoutes.js";
 import {} from  'dotenv/config'
+import { WebSocketServer } from "ws";
+import { clientSubscriptionInstance } from "./Utility/classes.js";
+import { subscribeToTicker } from "./handler/websocketHandler.js";
 
 const app = express();
 
@@ -30,4 +33,26 @@ app.use('/orders', orderRouter)
 
 
 app.use('/webSocketConnection', websocketRouter)
-app.listen(port, () => console.log(`Listening on Port ${port}...`));
+let serverHttp = app.listen(port, () => console.log(`Listening on Port ${port}...`));
+
+export const wss = new WebSocketServer({server: serverHttp});
+
+wss.on("connection", (client) => {
+    console.log("Frontend client connected");
+    
+    client.on("message", async (message, isBinary) => {
+        if(message.toString().includes("SUBSCRIBE")){
+            clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client);
+            console.log(Array.from(clientSubscriptionInstance.tickerClientMap.keys()));
+        }
+        await subscribeToTicker()
+        wss.clients.forEach((c)=>{
+            c.send(message,{binary:isBinary})
+        })
+        console.log("Received message from frontend:", message.toString());
+    });
+
+    client.on("close", (client) => {
+        console.log("Frontend client disconnected", client);
+    });
+});
