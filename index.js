@@ -11,7 +11,6 @@ import { orderRouter } from "./routes/orderRoutes.js";
 import {} from  'dotenv/config'
 import { WebSocketServer } from "ws";
 import { clientSubscriptionInstance } from "./Utility/classes.js";
-import { subscribeToTicker } from "./handler/websocketHandler.js";
 
 const app = express();
 
@@ -44,11 +43,10 @@ wss.on("connection", (client) => {
         client.on("message", async (message) => {
             console.log("Received message from frontend:", message.toString());
             
-            if(message.toString().includes("SUBSCRIBE")){
-                clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client);
-                console.log(clientSubscriptionInstance.getArrayOfActiveTickers());
-                await subscribeToTicker();
-            }
+            if(message.toString().includes("SUBSCRIBE"))
+                await clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client);
+            
+            console.log(clientSubscriptionInstance.getArrayOfActiveTickers());            
         });
 
         client.on("close", (client) => {
