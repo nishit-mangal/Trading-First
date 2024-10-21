@@ -40,19 +40,21 @@ export const wss = new WebSocketServer({server: serverHttp});
 wss.on("connection", (client) => {
     console.log("Frontend client connected");
     
-    client.on("message", async (message, isBinary) => {
-        if(message.toString().includes("SUBSCRIBE")){
-            clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client);
-            console.log(Array.from(clientSubscriptionInstance.tickerClientMap.keys()));
-        }
-        await subscribeToTicker()
-        wss.clients.forEach((c)=>{
-            c.send(message,{binary:isBinary})
-        })
-        console.log("Received message from frontend:", message.toString());
-    });
+    try {
+        client.on("message", async (message) => {
+            console.log("Received message from frontend:", message.toString());
+            
+            if(message.toString().includes("SUBSCRIBE")){
+                clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client);
+                console.log(clientSubscriptionInstance.getArrayOfActiveTickers());
+                await subscribeToTicker();
+            }
+        });
 
-    client.on("close", (client) => {
-        console.log("Frontend client disconnected", client);
-    });
+        client.on("close", (client) => {
+            console.log("Frontend client disconnected", client);
+        });
+    } catch(err){
+        console.log(err ?? "Error occured while establishig websocket connection");
+    }
 });

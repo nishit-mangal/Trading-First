@@ -1,3 +1,5 @@
+import { unsubscribeToTicker } from "../handler/websocketHandler.js";
+
 class ClientSubscriptionManager{
     static #instance;
     
@@ -40,19 +42,34 @@ class ClientSubscriptionManager{
     getArrayOfActiveTickers(){
         return Array.from(this.#tickerClientsMap.keys()) || [];
     }
+    
     clientSubscribesToTicker(tickerName, clientId){
         if(!tickerName || !clientId)
             throw "Missing Parameter";
         
         // add and modify the client to the ticker it want to subscribe
         this.#tickerClientsMap.set(tickerName, [...(this.#tickerClientsMap.get(tickerName) || []), clientId]);
-        if(this.#clientTickerMap.has(clientId)){
-            let previousTicker = this.#clientTickerMap.get(clientId);
-            this.#tickerClientsMap.set(previousTicker, this.#tickerClientsMap.get(previousTicker)?.filter(c=> c!== clientId));    
-            if(this.#tickerClientsMap.get(previousTicker).length === 0)
-                this.#tickerClientsMap.delete(previousTicker);    
-        }
+
+        if(this.#clientTickerMap.has(clientId))
+            this.clientUnsubscribesToTicker(this.#clientTickerMap.get(clientId), clientId)
+        
         this.#clientTickerMap.set(clientId, tickerName);      
+    }
+
+    /**
+     * check if the client was SUBSCRIBED to a ticker before.
+     * If yes, than remove the client from the Client Array corresponding to that Tciker
+     * If the Array becomes empty remove the ticker and Unsuscribe to that ticker.
+     *  */         
+    clientUnsubscribesToTicker(tickerName, client){
+        if(!tickerName || !client)
+            throw "Missing Parameter";     
+        
+        this.#tickerClientsMap.set(tickerName, this.#tickerClientsMap.get(tickerName)?.filter(c=> c!== client));
+        if(this.#tickerClientsMap.get(tickerName).length === 0){
+            this.#tickerClientsMap.delete(tickerName);
+            unsubscribeToTicker([tickerName], client);
+        }
     }
 }
 

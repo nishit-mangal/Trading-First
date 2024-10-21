@@ -2,11 +2,10 @@ import { headers } from "../Constants/authorizationConst.js";
 import protobuf from "protobufjs";
 import axios from "axios";
 import { WebSocket } from "ws";
-import { wss } from "../index.js";
 import { clientSubscriptionInstance } from "../Utility/classes.js";
 
 let protobufRoot = null;
-let ws1 = null;
+export let ws1 = null;
 export const initProtobuf = async () => {
   protobufRoot = await protobuf.load("./Constants/MarketDataFeed.proto");
   console.log("Protobuf part initialization complete");
@@ -51,31 +50,14 @@ export const connectWebSocket = async (wsUrl) => {
     });
 
     ws1.on("message", (data) => {
-      let response = decodeProfobuf(data);
-      console.log(response);
+      let response = decodeProfobuf(data);      
       
       for(const key in response.feeds){
-        console.log(key)
+        console.log(key, response.feeds[key]?.ltpc.ltp)
+        clientSubscriptionInstance.getClientsFromTicker(key).forEach((c)=>{
+          c.send(response.feeds[key]?.ltpc.ltp)
+        })
       }
-
-      wss.clients.forEach((client) => {
-        console.log("Server code");
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(
-            JSON.stringify({
-              instrument: "Nifty 50",
-              price: response.feeds["NSE_INDEX|Nifty 50"]?.ltpc.ltp,
-            })
-          );
-
-          client.send(
-            JSON.stringify({
-              instrument: "Jio",
-              price: response.feeds["NSE_EQ|INE002A01018"]?.ltpc.ltp,
-            })
-          );
-        }
-      });
 
       resolve(decodeProfobuf(data));
     });
@@ -110,9 +92,9 @@ export const subscribeToTicker = async () => {
     if(!wsUrl)
       throw 'URL not generated to connect Websocket'
     
-    console.log("URL generated Successfully", wsUrl);
-    
-    await connectWebSocket(wsUrl); // Connect to the WebSocket    
+    console.log("URL generated Successfully", wsUrl);    
+    await connectWebSocket(wsUrl); // Connect to the WebSocket   
+    return;   
   }
   console.log("The new subscription Array is", clientSubscriptionInstance.getArrayOfActiveTickers())
   const data = {
@@ -122,6 +104,25 @@ export const subscribeToTicker = async () => {
       mode: "ltpc",
       instrumentKeys: clientSubscriptionInstance.getArrayOfActiveTickers(), // Subscribe to the ticker symbol
     },
-  };
-  ws1.send(Buffer.from(JSON.stringify(data)));
+  }
+  ws1.send(Buffer.from(JSON.stringify(data)));    
 };
+
+export const unsubscribeToTicker = (unsubscribeArr) => {
+  if(!ws1 || !ws1.readyState === WebSocket.OPEN)
+    console.log("No connection exist with Upstox. Can not UNSUBSCRIBE.\n");
+
+  if(!unsubscribeArr || !unsubscribeArr.length)
+    console.log("No Relevant Unsubscribe Array exist.");
+
+  const unsubscribeMessage = {
+    guid: "somegud",
+    method: "unsub",
+    data: {
+      mode: "ltpc",
+      instrumentKeys: unsubscribeArr, // Unsubscribe from old tickers
+    },
+  };
+  console.log("Unsubscribing from: ", unsubscribeArr);
+  ws1.send(Buffer.from(JSON.stringify(unsubscribeMessage)));
+}
