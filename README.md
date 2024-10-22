@@ -7,3 +7,5 @@ Demo 2 Websocket: https://www.loom.com/share/f0533b1f05324bc1ba5ce93709de51d5?si
 Demo 3 MVP of Nivesh (Holdings + Funds + Order): https://www.loom.com/share/6c5ca93545b24b3e9d2c4dd4c8288831?sid=28d70850-d47a-432f-86ef-4f5a9a3c79c7
 
 Demo 4 Order History (Redis + Infinite Scroll): https://www.loom.com/share/504fe059b3ab4f93b33ba6a6b85fd846?sid=18192d85-113f-4d25-9e8d-fa9b5343aee4 
+
+Demo 5 Live ticker feed (dual websocket connection): https://www.loom.com/share/f8dbada7191746119ff64331a7274a41?sid=4f3cf819-4bb2-4452-af8a-f44468827de5
