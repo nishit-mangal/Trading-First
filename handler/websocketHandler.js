@@ -55,7 +55,10 @@ export const connectWebSocket = async (wsUrl) => {
       for(const key in response.feeds){
         console.log(key, response.feeds[key]?.ltpc.ltp)
         clientSubscriptionInstance.getClientsFromTicker(key).forEach((c)=>{
-          c.send(response.feeds[key]?.ltpc.ltp)
+          if(c.readyState === WebSocket.OPEN)
+            c.send(response.feeds[key]?.ltpc.ltp)
+          // TODO: else if the client is closed try deleting it. Try using worker threads.
+          //or try using event emitter
         })
       }
 
