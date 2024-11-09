@@ -10,7 +10,7 @@ import { profitLossRouter } from "./routes/profitLossRouter.js";
 import { orderRouter } from "./routes/orderRoutes.js";
 import {} from  'dotenv/config'
 import { WebSocketServer } from "ws";
-import { clientSubscriptionInstance } from "./Utility/classes.js";
+import { clientSubscriptionInstance } from "./Utility/clientSubscriptionClass.js";
 
 const app = express();
 
