@@ -4,6 +4,7 @@ export const pageSize = 5
 
 export const HttpCode = {
     SUCCESS: '200',
+    NO_CONTENT: "204",
     INTERNAL_SERVER_ERROR: '500',
     BAD_GATEWAY: '502',
     BAD_REQUEST: '400',
@@ -13,7 +14,8 @@ export const HttpCode = {
 export const HTTP_MESSAGE = {
     INTERNAL_SERVER_ERROR: "Internal Server Error",
     UNAUTHORIZED: "Unauthorized",
-    INVALID_INPUT: "Invalid Input"
+    INVALID_INPUT: "Invalid Input",
+    NO_CONTENT: "No content found to update"
 };
 export const CACHE_NAMES = {
     FUND_DETAILS: {

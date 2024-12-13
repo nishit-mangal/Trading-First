@@ -36,5 +36,6 @@ model users {
   username     String? @db.VarChar(255)
   phone_number String? @db.VarChar(255)
   is_verified  Boolean @default(false)
+  pin          Int?    
   otps         otp[]
 }

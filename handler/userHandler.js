@@ -10,21 +10,13 @@ const prisma = new PrismaClient();
  * @param {username:string, email:string, password:hashedstring} reqObj 
  */
 export async function createUserInDB(reqObj){
-    const existingUser = await prisma.users.findFirst({
-        where:{
-            email:reqObj.email
-        }
-    })
-    if(existingUser){
-        console.log("A user already exist with the given email.");
-        return null;
-    }
     const hashedPassword = await bcrypt.hash(reqObj.password, 10);
     let newUser = await prisma.users.create({
         data: {
             username: reqObj.username,
             email: reqObj.email,
-            password: hashedPassword
+            password: hashedPassword,
+            phone_number: reqObj.phoneNumber
         },
     });
 
@@ -86,21 +78,18 @@ export async function markUserAccountVerified(userId){
     })
 }
 
-export async function sendEmailVerifiationCode(email){
+export function sendEmailVerifiationCode(email){
     if(!email){
         console.log("Invalid Input. \nEmail not recieved in fn:sendEmailVerifiationCode");
         return null;
     }
     let otp = generateRandomNumber();
-    console.log("Generated OTP is- ", otp);
-    let sentMail = await triggerMail(
+    triggerMail(
         email, 
         "Verification Email",
         `<h1>Please confirm your OTP</h1>
         <p>Here is your OTP code: ${otp}</p>`
     )
-    if(!sentMail)
-        return null;
     return otp;
 }
 
@@ -127,5 +116,37 @@ export async function saveOTPinDB(otp, userId){
         })        
     }catch(err){
         console.log(err);        
+    }
+}
+
+export async function setPinForUserId(userId, pin){
+    try{
+        let response = await prisma.users.update({
+            where:{
+                id:Number(userId)
+            },
+            data:{
+                pin:Number(pin)
+            }
+        })
+        return response;
+    }catch(err){
+        console.log(err);
+        return false;
+    }
+}
+
+export async function getUserWithEmailAndPin(userEmail, pin){
+    try{
+        let response = await prisma.users.findUnique({
+            where:{
+                email:userEmail,
+                pin:Number(pin)
+            }
+        })
+        return response;
+    }catch(err){
+        console.log(err);
+        return false;
     }
 }
