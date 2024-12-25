@@ -26,7 +26,7 @@ export async function sortHoldingData(holdingArr) {
         profit: stock.pnl,
         quantity: stock.quantity,
         averagePrice: stock.average_price,
-        closingPrice: stock.last_price,   //should have been closing_price
+        closingPrice: stock.close_price,
         instrumentToken: stock.instrument_token,
       };
     }
