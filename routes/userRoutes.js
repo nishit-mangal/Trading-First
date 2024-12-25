@@ -1,5 +1,5 @@
 import express from 'express'
-import { createUser, forgotPassword, getFundDetails, getUserProfile, loginUser, resendOTP, resetPassword, setPin, verifyEmail, verifyPin } from '../controller/userController.js'
+import { createUser, getFundDetails, getUserProfile, loginUser, resendOTP, setPin, verifyEmail, verifyPin } from '../controller/userController.js'
 
 export const userRouter = express.Router()
 
@@ -11,5 +11,3 @@ userRouter.post("/resendOTP",resendOTP);
 userRouter.post("/login", loginUser);
 userRouter.post("/setPin", setPin);
 userRouter.post("/verifyPin", verifyPin);
-userRouter.post("/forgotPassword", forgotPassword);
-userRouter.post("/resetPassword", resetPassword);
