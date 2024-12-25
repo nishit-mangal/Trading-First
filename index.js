@@ -10,7 +10,9 @@ import { profitLossRouter } from "./routes/profitLossRouter.js";
 import { orderRouter } from "./routes/orderRoutes.js";
 import {} from  'dotenv/config'
 import { WebSocketServer } from "ws";
-import { clientSubscriptionInstance } from "./Utility/classes.js";
+import { clientSubscriptionInstance } from "./Utility/clientSubscriptionClass.js";
+import cookieParser from "cookie-parser";
+ 
 
 const app = express();
 
@@ -18,7 +20,8 @@ const port = process.env.PORT ?? 8000;
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json())
-app.use(cors())
+app.use(cors({ origin: "http://localhost:5173", credentials: true }))
+app.use(cookieParser());
 
 app.set('view engine','ejs')
 app.set('views', path.resolve('./views'))

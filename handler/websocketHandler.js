@@ -2,7 +2,7 @@ import { headers } from "../Constants/authorizationConst.js";
 import protobuf from "protobufjs";
 import axios from "axios";
 import { WebSocket } from "ws";
-import { clientSubscriptionInstance } from "../Utility/classes.js";
+import { clientSubscriptionInstance } from "../Utility/clientSubscriptionClass.js";
 
 let protobufRoot = null;
 export let ws1 = null;
