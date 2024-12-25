@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client"
 import { HttpCode } from "../Constants/constants.js";
 import { triggerMail } from "../Utility/emailSender.js";
 import { generateRandomNumber } from "../Utility/utilityFunctions.js";
+import { encrypt } from "../Utility/encryptionDecryption.js";
 
 const prisma = new PrismaClient();
 /**
@@ -126,7 +127,7 @@ export async function setPinForUserId(userId, pin){
                 id:Number(userId)
             },
             data:{
-                pin:Number(pin)
+                pin
             }
         })
         return response;
@@ -141,7 +142,7 @@ export async function getUserWithEmailAndPin(userEmail, pin){
         let response = await prisma.users.findUnique({
             where:{
                 email:userEmail,
-                pin:Number(pin)
+                pin:pin
             }
         })
         return response;
@@ -149,4 +150,26 @@ export async function getUserWithEmailAndPin(userEmail, pin){
         console.log(err);
         return false;
     }
+}
+
+export async function updatePasswordWithEmail(userEmail, password){
+    try{
+        await prisma.users.update({
+            where:{
+                email:userEmail
+            },
+            data:{
+                password:password
+            }
+        })
+        return true;
+    }catch(err){
+        console.log("Password update failed in fn::updatePasswordWithEmail\n", err);
+        return false;
+    }
+}
+
+export async function prepareResetLink(email){
+    let encryptedEmail = encrypt(email);
+    return `http://localhost:5173/forgotPassword/?key=${encryptedEmail}`;
 }
