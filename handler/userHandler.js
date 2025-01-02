@@ -173,3 +173,14 @@ export async function prepareResetLink(email){
     let encryptedEmail = encrypt(email);
     return `http://localhost:5173/forgotPassword/?key=${encryptedEmail}`;
 }
+
+export async function getUserById(userId){
+    const existingUser = await prisma.users.findFirst({
+        where:{
+            id:userId
+        }
+    })
+    if(!existingUser)
+        return false;
+    return existingUser;
+}

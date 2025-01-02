@@ -6,7 +6,9 @@ import { accessToken } from "../Constants/authorizationConst.js";
 import { callApiToGetFundAndMargin } from "../handler/apiContainer.js";
 import { client } from "../Clients/clients.js";
 import { CACHE_NAMES, HTTP_MESSAGE, HttpCode } from "../Constants/constants.js";
-import { checkIfUserExistWithEmail, createUserInDB, findValidOTPsAndCheckIfValid, getUserWithEmailAndPin, markUserAccountVerified, prepareResetLink, saveOTPinDB, sendEmailVerifiationCode, setPinForUserId, updatePasswordWithEmail } from "../handler/userHandler.js";
+import { checkIfUserExistWithEmail, createUserInDB, findValidOTPsAndCheckIfValid, getUserById, getUserWithEmailAndPin, markUserAccountVerified, saveOTPinDB, sendEmailVerifiationCode, setPinForUserId, updatePasswordWithEmail } from "../handler/userHandler.js";
+import { triggerMail } from "../Utility/emailSender.js";
+import { resetLink } from "../views/emailHTMLs.js";
 
 export async function getUserProfile(req, res) {
   const headers = {
@@ -369,10 +371,24 @@ export async function forgotPassword(req, resp) {
       throw "User doesn't exist with email: " + reqObj.email;
     }
 
-    let resetLink = prepareResetLink(user.email);
-    console.log(resetLink);
+    let accessToken = jwt.sign(
+      {
+        userId: Number(user.id.toString()),
+        email: user.email
+      },
+      process.env.JWT_TOKEN + user.password,
+      {
+        expiresIn:"5m"
+      }
+    )
+
+    let link = `http://localhost:5173/forgotPassword/${user.id}/${accessToken}`;
+    console.log("Reset Link: ", link);
+    
+    triggerMail(user.email, "Password Reset Link", resetLink(link));
+
     response.responseCode = HttpCode.SUCCESS;
-    response.responseMessage = "Reset Link sent to respective email.";
+    response.responseMessage = "Reset link sent to respective email.";
     resp.json(response);
   } catch (err) {
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
@@ -387,8 +403,7 @@ export async function resetPassword(req, resp) {
   };
   try {
     let reqObj = req.body;
-    console.log("reqObj", reqObj);
-    if (!reqObj || !reqObj.email || !reqObj.currPassword || !reqObj.newPassword || !reqObj.confirmNewPassword || reqObj.newPassword !==reqObj.confirmNewPassword) {
+    if (!reqObj || !reqObj.email || !reqObj.currPassword || !reqObj.newPassword || !reqObj.confirmNewPassword || reqObj.newPassword !== reqObj.confirmNewPassword) {
       response.responseCode = HttpCode.BAD_REQUEST;
       response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
       throw "Missing Data in fn::resetPassword";
@@ -409,13 +424,53 @@ export async function resetPassword(req, resp) {
     }
     const hashedPassword = await bcrypt.hash(reqObj.newPassword, 10);
     let updateResp = await updatePasswordWithEmail(reqObj.email, hashedPassword);
-    if(!updateResp)
+    if (!updateResp)
       throw "Password update failed";
-    
+
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Password updated successfully.";
     resp.json(response);
   } catch (err) {
+    console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
+    resp.json(response);
+  }
+}
+
+export async function resetForgotPassword(req, resp) {
+  let response = {
+    responseCode: HttpCode.INTERNAL_SERVER_ERROR,
+    responseMessage: HTTP_MESSAGE.INTERNAL_SERVER_ERROR,
+  };
+  try {
+    let reqObj = req.body;
+    if (!reqObj || !reqObj.userId || !reqObj.token || !reqObj.newPassword || !reqObj.confirmNewPassword || reqObj.newPassword !== reqObj.confirmNewPassword) {
+      response.responseCode = HttpCode.BAD_REQUEST;
+      response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
+      throw "Missing Data in fn::resetForgotPassword";
+    }
+
+    let user = await getUserById(reqObj.userId);
+    if (!user) {
+      response.responseCode = HttpCode.UNAUTHORIZED;
+      response.responseMessage = "User doesn't exist.";
+      throw "Invalid link to reset password. Try generating link again.";
+    }
+
+    jwt.verify( reqObj.token, process.env.JWT_TOKEN + user.password);
+    
+    const hashedPassword = await bcrypt.hash(reqObj.newPassword, 10);
+    let updateResp = await updatePasswordWithEmail(user.email, hashedPassword);
+    if (!updateResp)
+      throw "Password update failed";
+
+    response.responseCode = HttpCode.SUCCESS;
+    response.responseMessage = "Reset link sent to respective email.";
+    resp.json(response);
+  } catch (err) {
+    if(err instanceof jwt.TokenExpiredError)
+      response.responseMessage = "Link expired. Try generating new.";
+    else if (err instanceof jwt.JsonWebTokenError)
+      response.responseMessage = "Invalid Reset Link";
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
     resp.json(response);
   }
