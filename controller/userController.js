@@ -149,8 +149,22 @@ export async function verifyEmail(req, res) {
     }
 
     await markUserAccountVerified(user.id);
+
+    let loginToken = jwt.sign(
+      {
+        userId: Number(user.id.toString()),
+        userEmail: user.email,
+        hasPin: user.pin ? true : false,
+        isVerified: true
+      },
+      process.env.JWT_TOKEN
+    )
+    
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Successfully verified email";
+    response.data = {
+      loginToken 
+    }
     res.json(response);
   } catch (err) {
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
@@ -371,18 +385,18 @@ export async function forgotPassword(req, resp) {
       throw "User doesn't exist with email: " + reqObj.email;
     }
 
-    let accessToken = jwt.sign(
+    let resetPasswordToken = jwt.sign(
       {
         userId: Number(user.id.toString()),
         email: user.email
       },
       process.env.JWT_TOKEN + user.password,
       {
-        expiresIn:"5m"
+        expiresIn:"10m"
       }
     )
 
-    let link = `http://localhost:5173/forgotPassword/${user.id}/${accessToken}`;
+    let link = `http://localhost:5173/forgotPassword/${user.id}/${resetPasswordToken}`;
     console.log("Reset Link: ", link);
     
     triggerMail(user.email, "Password Reset Link", resetLink(link));
@@ -464,7 +478,7 @@ export async function resetForgotPassword(req, resp) {
       throw "Password update failed";
 
     response.responseCode = HttpCode.SUCCESS;
-    response.responseMessage = "Reset link sent to respective email.";
+    response.responseMessage = "Password set successfully.";
     resp.json(response);
   } catch (err) {
     if(err instanceof jwt.TokenExpiredError)

@@ -40,7 +40,6 @@ export async function verifyToken(req, res){
       throw "Missing Data in fn::verifyToken";
     }
     let jwtObject = jwt.verify(reqObj.token, process.env.JWT_TOKEN);
-    console.log(jwtObject);
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Token verified";
     response.data = jwtObject; 
