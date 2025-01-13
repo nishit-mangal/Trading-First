@@ -108,7 +108,7 @@ export async function callApiToCheckOrderStatus(orderId, accessToken) {
   }
 }
 
-export async function callApiToGenerateAccessToken(recivedCode) {
+export async function callApiToGenerateAccessToken(recivedCode, apiSecret, apiKey) {
   const headers = {
     accept: "application/json",
     "Api-Version": "2.0",
@@ -116,8 +116,8 @@ export async function callApiToGenerateAccessToken(recivedCode) {
   };
   const data = {
     code:recivedCode,
-    client_id: process.env.API_KEY,
-    client_secret: process.env.API_SECRET,
+    client_id: apiKey,
+    client_secret: apiSecret,
     redirect_uri: process.env.REDIRECT_URI,
     grant_type: "authorization_code",
   };
