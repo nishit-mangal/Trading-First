@@ -510,13 +510,13 @@ export async function getUserDetails(req, resp){
       response.responseMessage = "User doesn't exist.";
       throw "User does not exist.";
     }
-
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Password set successfully.";
     response.data = {
       name: user.username,
       isVerified: user.is_verified,
-      secretsExists: !!(user.user_api_key && user.user_api_secret)
+      secretsExists: !!(user.user_api_key && user.user_api_secret),
+      apiKey: user.user_api_key
     }
 
     resp.json(response);
