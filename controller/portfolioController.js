@@ -60,7 +60,7 @@ export async function getHoldings(req, res) {
       stock.oneYearMax = oneYearMax
 
       //percentage down/up from 1year high
-      let percentage = Math.floor(((stock.closingPrice - stock.oneYearMax)/stock.closingPrice)*100)
+      let percentage = Math.floor(((stock.closingPrice - stock.oneYearMax)/stock.oneYearMax)*100)
       // console.log(`Percentage for ${stock.companyName} is ${percentage}`)
       stock.percentFromMax = percentage
 

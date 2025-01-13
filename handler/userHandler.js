@@ -184,3 +184,15 @@ export async function getUserById(userId){
         return false;
     return existingUser;
 }
+
+export async function setAPISecret(userId, apiSecret, apiKey){
+    await prisma.users.update({
+        where:{
+            id: userId
+        },
+        data:{
+            user_api_secret:apiSecret,
+            user_api_key: apiKey
+        }
+    })
+}

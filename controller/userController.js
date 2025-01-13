@@ -6,9 +6,10 @@ import { accessToken } from "../Constants/authorizationConst.js";
 import { callApiToGetFundAndMargin } from "../handler/apiContainer.js";
 import { client } from "../Clients/clients.js";
 import { CACHE_NAMES, HTTP_MESSAGE, HttpCode } from "../Constants/constants.js";
-import { checkIfUserExistWithEmail, createUserInDB, findValidOTPsAndCheckIfValid, getUserById, getUserWithEmailAndPin, markUserAccountVerified, saveOTPinDB, sendEmailVerifiationCode, setPinForUserId, updatePasswordWithEmail } from "../handler/userHandler.js";
+import { checkIfUserExistWithEmail, createUserInDB, findValidOTPsAndCheckIfValid, getUserById, getUserWithEmailAndPin, markUserAccountVerified, saveOTPinDB, sendEmailVerifiationCode, setAPISecret, setPinForUserId, updatePasswordWithEmail } from "../handler/userHandler.js";
 import { triggerMail } from "../Utility/emailSender.js";
 import { resetLink } from "../views/emailHTMLs.js";
+import { checkIfUuid } from "../Constants/regex.js";
 
 export async function getUserProfile(req, res) {
   const headers = {
@@ -485,6 +486,81 @@ export async function resetForgotPassword(req, resp) {
       response.responseMessage = "Link expired. Try generating new.";
     else if (err instanceof jwt.JsonWebTokenError)
       response.responseMessage = "Invalid Reset Link";
+    console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
+    resp.json(response);
+  }
+}
+
+export async function getUserDetails(req, resp){
+  let response = {
+    responseCode: HttpCode.INTERNAL_SERVER_ERROR,
+    responseMessage: HTTP_MESSAGE.INTERNAL_SERVER_ERROR,
+  };
+  try {
+    let userId = parseInt(req.params.userId);
+    if (!userId) {
+      response.responseCode = HttpCode.BAD_REQUEST;
+      response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
+      throw "Missing Data in fn::getUserDetails";
+    }
+
+    let user = await getUserById(userId);
+    if (!user) {
+      response.responseCode = HttpCode.UNAUTHORIZED;
+      response.responseMessage = "User doesn't exist.";
+      throw "User does not exist.";
+    }
+
+    response.responseCode = HttpCode.SUCCESS;
+    response.responseMessage = "Password set successfully.";
+    response.data = {
+      name: user.username,
+      isVerified: user.is_verified,
+      secretsExists: !!(user.user_api_key && user.user_api_secret)
+    }
+
+    resp.json(response);
+  } catch (err) {
+    console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
+    resp.json(response);
+  }
+}
+
+export async function setAPIData(req, resp) {
+  let response = {
+    responseCode: HttpCode.INTERNAL_SERVER_ERROR,
+    responseMessage: HTTP_MESSAGE.INTERNAL_SERVER_ERROR,
+  };
+  try {
+    let reqObj = req.body;
+    
+    if (!reqObj || !reqObj.userId || !reqObj.apiSecret || !reqObj.apiKey) {
+      response.responseCode = HttpCode.BAD_REQUEST;
+      response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
+      throw "Missing Data in fn::setAPIData";
+    }
+    
+    if(!checkIfUuid(reqObj.apiKey)){
+      response.responseCode = HttpCode.BAD_REQUEST;
+      response.responseMessage = "Api key must be UUID.";
+      throw "Invalid api key type. It must be UUID.";
+    }
+
+    let user = await getUserById(reqObj.userId);
+    if (!user) {
+      response.responseCode = HttpCode.UNAUTHORIZED;
+      response.responseMessage = "User doesn't exist.";
+      throw "User does not exist.";
+    }
+
+    //update API secret
+    await setAPISecret(reqObj.userId, reqObj.apiSecret, reqObj.apiKey);
+
+    response.responseCode = HttpCode.SUCCESS;
+    response.responseMessage = "API secrets set successfully.";
+    
+    resp.json(response);
+  } catch (err) {
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
     resp.json(response);
   }
