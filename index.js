@@ -32,7 +32,7 @@ app.use('/portfolio', portfolioRouter)
 app.use('/historicalData', historicalDataRouter)
 app.use('/profitLoss', profitLossRouter)
 app.use('/orders', orderRouter)
-app.get('healthCheck', (req, res)=>{
+app.get('/healthCheck', (req, res)=>{
     console.log("All good");
     res.json({msg: "All good"});
 })
