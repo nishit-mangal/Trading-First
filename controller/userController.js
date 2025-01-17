@@ -358,7 +358,7 @@ export async function verifyPin(req, resp) {
 
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Pin verified successfully";
-    resp.cookie("session-token", accessToken, { maxAge: 1 * 60 * 60 * 1000, domain: 'http://localhost:5173' });
+    resp.cookie("session-token", accessToken, { maxAge: 1 * 60 * 60 * 1000, domain: 'http://localhost:5173', secure: false, sameSite: 'None' });
     resp.json(response);
   } catch (err) {
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
