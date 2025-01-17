@@ -359,7 +359,8 @@ export async function verifyPin(req, resp) {
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Pin verified successfully";
     resp.cookie("session-token", accessToken, { 
-      maxAge: 1 * 60 * 60 * 1000
+      maxAge: 1 * 60 * 60 * 1000,
+      
     });
 
     resp.json(response);
