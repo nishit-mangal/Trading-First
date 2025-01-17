@@ -23,7 +23,7 @@ app.use(express.json())
 app.use(cors({ origin: [
     "http://localhost:5173",
     "https://nishit.online",
-    "https://api-finance.nishit.online"
+    "https://finance.nishit.online"
 ], credentials: true }))
 app.use(cookieParser());
 
