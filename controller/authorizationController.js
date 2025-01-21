@@ -15,13 +15,14 @@ export async function generateAccessToken(req, res) {
       response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
       throw 'Code or userId not received.'
     }
-
+    
     let user = await getUserById(req.query.userId);
     if (!user) {
       response.responseCode = HttpCode.UNAUTHORIZED;
       response.responseMessage = "User doesn't exist.";
       throw "User does not exist.";
     }
+    console.log(user);
 
     let newAccessCode = await generateAccessTokenHandler(req.query.code, user.user_api_secret, user.user_api_key);
     if(!newAccessCode)
