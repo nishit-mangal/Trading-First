@@ -39,5 +39,6 @@ model users {
   pin             String? @db.Char(4)
   user_api_key    String? @db.Uuid
   user_api_secret String? @db.VarChar(255)
+  picture         String? @db.VarChar(255)
   otps            otp[]
 }

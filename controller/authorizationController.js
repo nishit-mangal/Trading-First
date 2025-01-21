@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
 import {} from "dotenv/config";
-import { generateAccessTokenHandler } from "../handler/authorizationHandler.js";
+import { createGoogleUser, generateAccessTokenHandler, verifyExistingUserAndUpdatePicture } from "../handler/authorizationHandler.js";
 import { HTTP_MESSAGE, HttpCode } from "../Constants/constants.js";
-import { getUserById } from "../handler/userHandler.js";
+import { checkIfUserExistWithEmail, getUserById } from "../handler/userHandler.js";
+import { googleApiClient } from "../Clients/googleAPI.js";
+import { callApiToGetGoogleProfile } from "../handler/apiContainer.js";
 
 export async function generateAccessToken(req, res) {
   let response = {
@@ -59,5 +61,63 @@ export async function verifyToken(req, res){
   }catch(err){
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
     res.json(response);
+  }
+}
+
+export async function googleCodeAuth(req, resp){
+  let response = {
+    responseCode: HttpCode.INTERNAL_SERVER_ERROR,
+    responseMessage: HTTP_MESSAGE.INTERNAL_SERVER_ERROR,
+  };
+  
+  try{
+    if(!req.query.code){
+      response.responseCode = HttpCode.BAD_REQUEST;
+      response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
+      throw 'Code not received.'
+    }
+
+    const googleUserResponse = await googleApiClient.getToken(req.query.code);
+    googleApiClient.setCredentials(googleUserResponse.tokens);
+    
+    let userDetails = await callApiToGetGoogleProfile(googleUserResponse.tokens.access_token);
+    let {email, name, picture} = userDetails.data;
+    if(!email){
+      response.responseCode = HttpCode.INTERNAL_SERVER_ERROR;
+      response.responseMessage = "Google Authentication failed.";
+      throw "Did not receive Email from google";    
+    }
+
+    let user = await checkIfUserExistWithEmail(email);
+    if(!user){
+      user = await createGoogleUser(email, name, picture);
+    }else{
+      await verifyExistingUserAndUpdatePicture(user.id, picture);
+    }
+
+    let loginToken = jwt.sign(
+      {
+        userId: Number(user.id.toString()),
+        userEmail: user.email,
+        hasPin: user.pin ? true : false,
+        isVerified: true
+      },
+      process.env.JWT_TOKEN
+    )
+    
+    response.data = {
+      userId: user.id.toString(),
+      userPin: !!user.pin,
+      userVerified: user.is_verified,
+      userEmail: user.email,
+      accessToken: loginToken
+    }
+
+    response.responseCode = HttpCode.SUCCESS;
+    response.responseMessage = "Successfully verified user.";
+    return resp.json(response);
+  }catch(err){
+    console.log(err.msg ?? err);
+    resp.json(response);
   }
 }

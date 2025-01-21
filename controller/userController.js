@@ -97,8 +97,7 @@ export async function createUser(req, res) {
 
     let responseObj = {
       status: user.status,
-      statusCode: user.statusCode,
-      data: user.data,
+      statusCode: user.statusCode
     };
 
     res.json(responseObj);

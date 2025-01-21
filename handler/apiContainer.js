@@ -138,3 +138,12 @@ export async function callApiToGenerateAccessToken(recivedCode, apiSecret, apiKe
     return null;
   }
 }
+
+export async function callApiToGetGoogleProfile(accessToken){
+  let config = {
+    method: "get",
+    maxBodyLength: Infinity,
+    url: `${process.env.GOOGLE_API_BASE_URL}/oauth2/v1/userinfo?alt=json&access_token=${accessToken}`
+  };
+  return await axios(config);
+}
