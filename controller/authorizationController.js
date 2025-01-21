@@ -22,7 +22,7 @@ export async function generateAccessToken(req, res) {
       response.responseMessage = "User doesn't exist.";
       throw "User does not exist.";
     }
-    console.log(user);
+    console.log("User details:", user, req.query.code);
 
     let newAccessCode = await generateAccessTokenHandler(req.query.code, user.user_api_secret, user.user_api_key);
     if(!newAccessCode)
