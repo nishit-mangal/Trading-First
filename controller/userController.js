@@ -318,9 +318,10 @@ export async function setPin(req, resp) {
       userId: (pinRes.id).toString(),
       userEmail: pinRes.email,
       userPin: pinRes.pin,
-      loginToken
+      loginToken,
+      pinToken: sessionToken
     }
-    resp.cookie("session-token", sessionToken, { maxAge: 1 * 60 * 60 * 1000 });
+    
     resp.json(response);
   } catch (err) {
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
@@ -358,11 +359,10 @@ export async function verifyPin(req, resp) {
 
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Pin verified successfully";
-    resp.cookie("session-token", accessToken, { 
-      maxAge: 1 * 60 * 60 * 1000,
-      
-    });
-
+    response.data = {
+      pinToken: accessToken
+    }
+    
     resp.json(response);
   } catch (err) {
     console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);

@@ -22,7 +22,6 @@ export async function getHoldings(req, res) {
     }else{
       //else fetch it from API call
       portfolioHoldings = await callApiToGetHoldings(accessToken);
-      console.log("portfolioHoldings", portfolioHoldings);
       //store it in cache
       if(portfolioHoldings)
         await client.setex( `${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME}`, CACHE_NAMES.PORTFOLIO_HOLDINGS.TTL, JSON.stringify(portfolioHoldings), ()=>console.log(`${CACHE_NAMES.PORTFOLIO_HOLDINGS.NAME} Details set in Cache`))
