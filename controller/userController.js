@@ -5,8 +5,8 @@ import { } from "dotenv/config";
 import { accessToken } from "../Constants/authorizationConst.js";
 import { callApiToGetFundAndMargin } from "../handler/apiContainer.js";
 import { client } from "../Clients/clients.js";
-import { CACHE_NAMES, HTTP_MESSAGE, HttpCode } from "../Constants/constants.js";
-import { checkIfUserExistWithEmail, createUserInDB, findValidOTPsAndCheckIfValid, getUserById, getUserWithEmailAndPin, markUserAccountVerified, saveOTPinDB, sendEmailVerifiationCode, setAPISecret, setPinForUserId, updatePasswordWithEmail } from "../handler/userHandler.js";
+import { CACHE_NAMES, HTTP_MESSAGE, HttpCode, OTP_TYPES } from "../Constants/constants.js";
+import { checkIfUserExistWithEmail, createUserInDB, findValidOTPsAndCheckIfValid, getUserById, getUserWithEmailAndPin, markUserAccountVerified, saveOTPinDB, sendEmailVerifiationCode, setAPISecret, setPinProcess, updatePasswordWithEmail } from "../handler/userHandler.js";
 import { triggerMail } from "../Utility/emailSender.js";
 import { resetLink } from "../views/emailHTMLs.js";
 import { checkIfUuid } from "../Constants/regex.js";
@@ -91,9 +91,9 @@ export async function createUser(req, res) {
     if (!user)
       throw { code: HttpCode.INTERNAL_SERVER_ERROR, msg: "Failure in creating user" };
 
-    let otpResponse = sendEmailVerifiationCode(user.data.email);
+    let otpResponse = sendEmailVerifiationCode(user.data.email, OTP_TYPES.EMAIL_VERIFICATION.NAME);
 
-    await saveOTPinDB(otpResponse, user.data.id);
+    await saveOTPinDB(otpResponse, user.data.id, OTP_TYPES.EMAIL_VERIFICATION.NAME);
 
     let responseObj = {
       status: user.status,
@@ -128,19 +128,27 @@ export async function verifyEmail(req, res) {
       response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
       throw "Missing Data";
     }
+    reqObj.otp = Number(reqObj.otp);
 
     let user = await checkIfUserExistWithEmail(reqObj.email);
     if (!user) {
       response.responseCode = HttpCode.UNAUTHORIZED;
       response.responseMessage = "User doesn't exist with given email";
       throw "User doesn't exist with email: " + reqObj.email;
-    } else if (user?.is_verified) {
+    }
+
+    if(reqObj.pin && reqObj.pin.length===4){
+      let setPinResp = await setPinProcess(user, reqObj.otp, reqObj.pin);
+      res.json(setPinResp);
+      return;
+    }
+
+    if (user?.is_verified) {
       response.responseCode = HttpCode.CONFLICT;
       response.responseMessage = "User is already verified";
       throw "Error in fn:: verifyEmail. Can not verify already verified user.";
     }
 
-    reqObj.otp = Number(reqObj.otp);
     let validOTP = await findValidOTPsAndCheckIfValid(user.id, reqObj.otp);
     if (validOTP.status === "Err") {
       response.responseCode = HttpCode.UNAUTHORIZED;
@@ -196,9 +204,9 @@ export async function resendOTP(req, res) {
       throw "Error in fn:: resendOTP. Can not send OTP to already verified user.";
     }
 
-    let otpResponse = sendEmailVerifiationCode(user.email);
+    let otpResponse = sendEmailVerifiationCode(user.email, OTP_TYPES.EMAIL_VERIFICATION.NAME);
 
-    await saveOTPinDB(otpResponse, user.id);
+    await saveOTPinDB(otpResponse, user.id, OTP_TYPES.EMAIL_VERIFICATION.NAME);
 
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "OTP sent.";
@@ -269,7 +277,7 @@ export async function setPin(req, resp) {
   };
   try {
     let reqObj = req.body;
-    if (!reqObj || !reqObj.email || !reqObj.password || !reqObj.pin || reqObj.pin.length !== 4) {
+    if (!reqObj || !reqObj.email || !reqObj.pin || reqObj.pin.length !== 4) {
       response.responseCode = HttpCode.BAD_REQUEST;
       response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
       throw "Missing Data in fn::setPin";
@@ -281,45 +289,12 @@ export async function setPin(req, resp) {
       response.responseMessage = "User doesn't exist with given email";
       throw "User doesn't exist with email: " + reqObj.email;
     }
+    
+    let otpResponse = sendEmailVerifiationCode(user.email, OTP_TYPES.SET_PIN.NAME);
+    await saveOTPinDB(otpResponse, user.id, OTP_TYPES.SET_PIN.NAME);
 
-    const passwordMatch = await bcrypt.compare(reqObj.password, user.password);
-    if (!passwordMatch) {
-      response.responseCode = HttpCode.UNAUTHORIZED;
-      response.responseMessage = "Invalid Password.";
-      throw "Invalid Password";
-    }
-
-    let pinRes = await setPinForUserId(user.id, reqObj.pin);
-    if (!pinRes) {
-      response.responseCode = HttpCode.NO_CONTENT;
-      response.responseMessage = HTTP_MESSAGE.NO_CONTENT;
-      throw "Error in fn::setPin No Data";
-    }
-
-    let loginToken = jwt.sign(
-      {
-        userId: Number(user.id.toString()),
-        userEmail: user.email,
-        hasPin: pinRes.pin ? true : false
-      },
-      process.env.JWT_TOKEN
-    )
-    let sessionToken = jwt.sign(
-      {
-        userId: Number(user.id.toString()),
-        userEmail: user.email
-      },
-      process.env.JWT_TOKEN
-    )
     response.responseCode = HttpCode.SUCCESS;
-    response.responseMessage = "Pin set Successfully";
-    response.data = {
-      userId: (pinRes.id).toString(),
-      userEmail: pinRes.email,
-      userPin: pinRes.pin,
-      loginToken,
-      pinToken: sessionToken
-    }
+    response.responseMessage = "OTP sent successfully";
     
     resp.json(response);
   } catch (err) {

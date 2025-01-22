@@ -1,9 +1,12 @@
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken";
+import { } from "dotenv/config";
 import { PrismaClient } from "@prisma/client"
-import { HttpCode } from "../Constants/constants.js";
+import { HTTP_MESSAGE, HttpCode, OTP_TYPES } from "../Constants/constants.js";
 import { triggerMail } from "../Utility/emailSender.js";
 import { generateRandomNumber } from "../Utility/utilityFunctions.js";
 import { encrypt } from "../Utility/encryptionDecryption.js";
+import { emailVerificationOTP, setPinOTP } from "../views/emailHTMLs.js";
 
 const prisma = new PrismaClient();
 /**
@@ -44,12 +47,14 @@ export async function checkIfUserExistWithEmail(email){
     return existingUser;
 }
 
-export async function findValidOTPsAndCheckIfValid(userId, otp){
+export async function findValidOTPsAndCheckIfValid(userId, otp, type){
     let validOTP = await prisma.otp.findFirst({
         where:{
-            user_id:userId
+            user_id:userId,
+            ...(type && { otp_type: type })
         }
-    })
+    });
+
     if(!validOTP)
         return {status:"Err", msg:"No valid OTP found."};
 
@@ -79,29 +84,35 @@ export async function markUserAccountVerified(userId){
     })
 }
 
-export function sendEmailVerifiationCode(email){
+export function sendEmailVerifiationCode(email, type){
     if(!email){
         console.log("Invalid Input. \nEmail not recieved in fn:sendEmailVerifiationCode");
         return null;
     }
-    let otp = generateRandomNumber();
-    triggerMail(
-        email, 
-        "Verification Email",
-        `<h1>Please confirm your OTP</h1>
-        <p>Here is your OTP code: ${otp}</p>`
-    )
+    
+    let body, subject, otp = generateRandomNumber();
+    if(type === OTP_TYPES.EMAIL_VERIFICATION.NAME){
+        body = emailVerificationOTP(otp);
+        subject = OTP_TYPES.EMAIL_VERIFICATION.SUBJECT;
+    }
+    else if(type === OTP_TYPES.SET_PIN.NAME){
+        body = setPinOTP(otp);
+        subject = OTP_TYPES.SET_PIN.SUBJECT;
+    }
+
+    triggerMail(email, subject, body);
     return otp;
 }
 
-export async function saveOTPinDB(otp, userId){
+export async function saveOTPinDB(otp, userId, type){
     try{
-        if(!otp || !userId)
+        if(!otp || !userId || !type)
             throw "No OTP received. Not saving to DB";
         
         await prisma.otp.deleteMany({
             where:{
-                user_id:userId
+                user_id:userId,
+                otp_type: type
             }
         })
 
@@ -112,7 +123,8 @@ export async function saveOTPinDB(otp, userId){
             data:{
                 otp:otp,
                 user_id:userId,
-                expired_at:oneHourLater
+                expired_at:oneHourLater,
+                otp_type: type
             }
         })        
     }catch(err){
@@ -120,7 +132,7 @@ export async function saveOTPinDB(otp, userId){
     }
 }
 
-export async function setPinForUserId(userId, pin){
+export async function setPinForUserId(userId, pin, type){
     try{
         let response = await prisma.users.update({
             where:{
@@ -128,6 +140,12 @@ export async function setPinForUserId(userId, pin){
             },
             data:{
                 pin
+            }
+        })
+        await prisma.otp.deleteMany({
+            where:{
+                user_id:userId,
+                otp_type: type
             }
         })
         return response;
@@ -195,4 +213,59 @@ export async function setAPISecret(userId, apiSecret, apiKey){
             user_api_key: apiKey
         }
     })
+}
+
+export async function setPinProcess(user, otp, pin){
+    let response = {
+        responseCode: HttpCode.INTERNAL_SERVER_ERROR,
+        responseMessage: HTTP_MESSAGE.INTERNAL_SERVER_ERROR,
+    };
+    try{
+        let validOTP = await findValidOTPsAndCheckIfValid(user.id, otp, OTP_TYPES.SET_PIN.NAME);
+        if (validOTP.status === "Err") {
+            response.responseCode = HttpCode.UNAUTHORIZED;
+            response.responseMessage = validOTP.msg;
+            throw "Failure validating OTP.";
+        }
+
+        let pinRes = await setPinForUserId(user.id, pin, OTP_TYPES.SET_PIN.NAME);
+        if (!pinRes) {
+            response.responseCode = HttpCode.NO_CONTENT;
+            response.responseMessage = HTTP_MESSAGE.NO_CONTENT;
+            throw "Error in fn::setPin No Data";
+        }
+
+        let loginToken = jwt.sign(
+            {
+                userId: Number(user.id.toString()),
+                userEmail: user.email,
+                hasPin: pinRes.pin ? true : false,
+                isVerified: user.is_verified
+            },
+            process.env.JWT_TOKEN
+        )
+
+        let sessionToken = jwt.sign(
+            {
+                userId: Number(user.id.toString()),
+                userEmail: user.email
+            },
+            process.env.JWT_TOKEN
+        )
+
+        response.data = {
+            userId: (pinRes.id).toString(),
+            userEmail: pinRes.email,
+            userPin: pinRes.pin,
+            loginToken,
+            pinToken: sessionToken
+        }
+
+        response.responseCode = HttpCode.SUCCESS;
+        response.responseMessage = "PIN set successfully";   
+        return response; 
+    }catch(err){
+        console.log(err ?? HTTP_MESSAGE.INTERNAL_SERVER_ERROR);
+        return response; 
+    }    
 }

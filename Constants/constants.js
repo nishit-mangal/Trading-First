@@ -31,3 +31,13 @@ export const CACHE_NAMES = {
         TTL:300
     },
 }
+export const OTP_TYPES = {
+    EMAIL_VERIFICATION : {
+        SUBJECT: "OTP to Verify Email",
+        NAME: "EMAIL_VERIFICATION"
+    },
+    SET_PIN: {
+        SUBJECT: "OTP to Set Pin",
+        NAME: "SET_PIN"
+    }
+}
