@@ -26,7 +26,7 @@ model otp {
   user_id    BigInt?
   created_at DateTime @default(now())
   expired_at DateTime
-  otp_type   String?  @db.VarChar(255)
+  otp_type   String   @db.VarChar(255)
   user       users?   @relation(fields: [user_id], references: [id])
 }
 

@@ -15,7 +15,6 @@ export const triggerMail = async (email, title, body) =>{
     try{
         if(!email || !title || !body)
             throw "Missing Inputs";
-        // Send emails to users
         await transporter.sendMail({
             from: 'nishitmangal5@gmail.com',
             to: email,
