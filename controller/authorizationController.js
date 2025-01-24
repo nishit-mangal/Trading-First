@@ -88,7 +88,6 @@ export async function googleCodeAuth(req, resp){
     }
 
     let user = await checkIfUserExistWithEmail(email);
-    console.log("iuser:", user);
     if(!user){
       user = await createGoogleUser(email, name, picture);
     }else{

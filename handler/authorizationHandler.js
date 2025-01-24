@@ -23,7 +23,6 @@ export async function createGoogleUser(email, name, picture){
 }
 
 export async function verifyExistingUserAndUpdatePicture(userId, picture) {
-  console.log(userId, picture);
   await prisma.users.update({
     where:{
       id:Number(userId)
