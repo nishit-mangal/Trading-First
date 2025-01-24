@@ -26,11 +26,11 @@ export async function verifyExistingUserAndUpdatePicture(userId, picture) {
   console.log(userId, picture);
   await prisma.users.update({
     where:{
-      id:userId
+      id:Number(userId)
     },
     data:{
-      is_verified:true,
-      picture: picture ?? ""
+      is_verified:true
+      // picture: picture ?? ""
     }
   })
 }
