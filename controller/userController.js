@@ -198,7 +198,19 @@ export async function resendOTP(req, res) {
       response.responseCode = HttpCode.UNAUTHORIZED;
       response.responseMessage = "User doesn't exist with given email";
       throw "User doesn't exist with email: " + reqObj.email;
-    } else if (user?.is_verified) {
+    } 
+
+    if(reqObj.type && reqObj.type === OTP_TYPES.SET_PIN.NAME){
+      let otpResponse = sendEmailVerifiationCode(user.email, OTP_TYPES.SET_PIN.NAME);
+      await saveOTPinDB(otpResponse, user.id, OTP_TYPES.SET_PIN.NAME);
+      
+      response.responseCode = HttpCode.SUCCESS;
+      response.responseMessage = "OTP sent successfully";      
+      res.json(response);
+      return;
+    }
+
+    if (user?.is_verified) {
       response.responseCode = HttpCode.CONFLICT;
       response.responseMessage = "User is already verified";
       throw "Error in fn:: resendOTP. Can not send OTP to already verified user.";
