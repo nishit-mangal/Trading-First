@@ -29,8 +29,8 @@ export async function verifyExistingUserAndUpdatePicture(userId, picture) {
       id:Number(userId)
     },
     data:{
-      is_verified:true
-      // picture: picture ?? ""
+      is_verified:true,
+      picture: picture
     }
   })
 }
