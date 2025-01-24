@@ -75,12 +75,10 @@ export async function googleCodeAuth(req, resp){
       response.responseMessage = HTTP_MESSAGE.INVALID_INPUT;
       throw 'Code not received.'
     }
-    console.log("code: ", req.query.code);
     const googleUserResponse = await googleApiClient.getToken(req.query.code);
     googleApiClient.setCredentials(googleUserResponse.tokens);
     
     let userDetails = await callApiToGetGoogleProfile(googleUserResponse.tokens.access_token);
-    console.log("userDetails: ", userDetails.data);
     
     let {email, name, picture} = userDetails.data;
     if(!email){
