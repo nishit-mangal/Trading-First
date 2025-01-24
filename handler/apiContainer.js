@@ -1,5 +1,5 @@
 import axios from "axios";
-import { accessToken, headers } from "../Constants/authorizationConst.js";
+import { headers } from "../Constants/authorizationConst.js";
 import {} from 'dotenv/config'
 
 export async function callApiToGetHoldings(accessToken) {
@@ -130,8 +130,6 @@ export async function callApiToGenerateAccessToken(recivedCode, apiSecret, apiKe
   };
   try{
     const response = await axios(config)
-    // console.log(response.data);
-    console.log("\nAccess Token before: ", accessToken)
     return response.data.access_token
   }catch(err){
     console.log(err.response?.data ?? err);
