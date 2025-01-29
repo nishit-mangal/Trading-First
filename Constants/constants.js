@@ -24,11 +24,11 @@ export const CACHE_NAMES = {
     },
     STOCK:{
         NAME:"STOCK",
-        TTL:300
+        TTL:60*10
     },
     PORTFOLIO_HOLDINGS:{
         NAME:"PORTFOLIO_HOLDINGS",
-        TTL:300
+        TTL:60*15
     },
 }
 export const OTP_TYPES = {

@@ -42,17 +42,18 @@ let serverHttp = app.listen(port, () => console.log(`Listening on Port ${port}..
 
 export const wss = new WebSocketServer({server: serverHttp});
 
-wss.on("connection", (client) => {
-    console.log("Frontend client connected");
-    
+wss.on("connection", (client, req) => {
     try {
+        console.log("Frontend client connected");
+        const token = req.url.split("=")[1];
+        
         client.on("message", async (message) => {
-            console.log("Received message from frontend:", message.toString());
+            console.log("\nReceived message from frontend:", message.toString());
             
             if(message.toString().includes("SUBSCRIBE"))
-                await clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client);
+                await clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client, token);
             
-            console.log(clientSubscriptionInstance.getArrayOfActiveTickers());            
+            console.log("Active tickers:", clientSubscriptionInstance.getArrayOfActiveTickers());            
         });
 
         client.on("close", (client) => {

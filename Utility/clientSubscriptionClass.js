@@ -43,19 +43,26 @@ class ClientSubscriptionManager{
         return Array.from(this.#tickerClientsMap.keys()) || [];
     }
     
-    async clientSubscribesToTicker(tickerName, clientId){
-        if(!tickerName || !clientId)
-            throw "Missing Parameter";
-        
-        // add and modify the client to the ticker it want to subscribe
-        this.#tickerClientsMap.set(tickerName, [...(this.#tickerClientsMap.get(tickerName) || []), clientId]);
+    async clientSubscribesToTicker(tickerName, clientId, token){
+        try{
+            if(!tickerName || !clientId || !token)
+                throw "Missing Parameter";
+            if(this.#clientTickerMap.get(clientId)===tickerName)
+                return;
+            
+            // add and modify the client to the ticker it want to subscribe
+            this.#tickerClientsMap.set(tickerName, [...(this.#tickerClientsMap.get(tickerName) || []), clientId]);
 
-        if(this.#clientTickerMap.has(clientId))
-            this.clientUnsubscribesToTicker(this.#clientTickerMap.get(clientId), clientId)
-        
-        this.#clientTickerMap.set(clientId, tickerName);      
+            if(this.#clientTickerMap.has(clientId))
+                this.clientUnsubscribesToTicker(this.#clientTickerMap.get(clientId), clientId)
+            
+            this.#clientTickerMap.set(clientId, tickerName);      
 
-        await subscribeToTicker();
+            await subscribeToTicker(token);
+        }catch(err){
+            console.log("\nError occured in fn::clientSubscribesToTicker.", err.msg ?? err);
+            return null;
+        }
     }
 
     /**
@@ -64,7 +71,7 @@ class ClientSubscriptionManager{
      * If the Array becomes empty remove the ticker and Unsuscribe to that ticker.
      *  */         
     clientUnsubscribesToTicker(tickerName, client){
-        console.log(this.#clientTickerMap.get(client))
+        console.log("\nInside fn::clientUnsubscribesToTicker", this.#clientTickerMap.get(client))
         if(!tickerName || !client)
             throw "Missing Parameter";     
         

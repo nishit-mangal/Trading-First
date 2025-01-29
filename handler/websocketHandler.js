@@ -11,12 +11,12 @@ export const initProtobuf = async () => {
   console.log("Protobuf part initialization complete");
 };
 
-export async function getMarketFeedUrl() {
+export async function getMarketFeedUrl(token) {
   let config = {
     method: "get",
     maxBodyLength: Infinity,
     url: "https://api.upstox.com/v2/feed/market-data-feed/authorize",
-    headers: headers,
+    headers: {...headers, "Authorization": `Bearer ${token}`},
   };
 
   try {
@@ -85,13 +85,13 @@ const decodeProfobuf = (buffer) => {
 };
 
 // Function to subscribe to a ticker symbol via the Upstox WebSocket
-export const subscribeToTicker = async () => {
+export const subscribeToTicker = async (token) => {
   if(!ws1 || !ws1.readyState === WebSocket.OPEN){
     console.log("A new connection was built with the client but no connection exist with Upstox. \nMaking Upstox Connection")
     
     await initProtobuf(); // Initialize protobuf
     
-    const wsUrl = await getMarketFeedUrl(); // Get the market feed URL
+    const wsUrl = await getMarketFeedUrl(token); // Get the market feed URL
     if(!wsUrl)
       throw 'URL not generated to connect Websocket'
     
@@ -112,11 +112,17 @@ export const subscribeToTicker = async () => {
 };
 
 export const unsubscribeToTicker = (unsubscribeArr) => {
-  if(!ws1 || !ws1.readyState === WebSocket.OPEN)
+  console.log("\nInside fn::unsubscribeToTicker. Unsubscribing from: ", unsubscribeArr);
+  
+  if(!ws1 || !ws1.readyState === WebSocket.OPEN){
     console.log("No connection exist with Upstox. Can not UNSUBSCRIBE.\n");
+    return;
+  }
 
-  if(!unsubscribeArr || !unsubscribeArr.length)
+  if(!unsubscribeArr || !unsubscribeArr.length){
     console.log("No Relevant Unsubscribe Array exist.");
+    return;
+  }
 
   const unsubscribeMessage = {
     guid: "somegud",
@@ -126,6 +132,5 @@ export const unsubscribeToTicker = (unsubscribeArr) => {
       instrumentKeys: unsubscribeArr, // Unsubscribe from old tickers
     },
   };
-  console.log("Unsubscribing from: ", unsubscribeArr);
   ws1.send(Buffer.from(JSON.stringify(unsubscribeMessage)));
 }
