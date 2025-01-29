@@ -500,7 +500,7 @@ export async function getUserDetails(req, resp){
       response.responseMessage = "User doesn't exist.";
       throw "User does not exist.";
     }
-    console.log(user);
+    
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Password set successfully.";
     response.data = {
