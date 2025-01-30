@@ -24,15 +24,12 @@ export async function generateAccessToken(req, res) {
       response.responseMessage = "User doesn't exist.";
       throw "User does not exist.";
     }
-    console.log("user: ", user);
     let newAccessCode = await generateAccessTokenHandler(req.query.code, user.user_api_secret, user.user_api_key);
     if(!newAccessCode)
       throw 'Code Not Generated'
-    console.log("newAccessCode: ", newAccessCode);
     
     //get relevant upstox user
     let existingUpstoxUserProfile = await getUpstoxUserUsingUserId(user.id);
-    console.log("existingUpstoxUserProfile: ", existingUpstoxUserProfile);
     
     /**
      * Contains:
