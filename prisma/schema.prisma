@@ -46,11 +46,12 @@ model users {
 }
 
 model upstox_users {
-  upstox_id String   @id
+  upstox_id String
   email     String
   user_name String?
   is_active Boolean?
   user_id   BigInt
+  id        BigInt   @id @default(autoincrement())
   user      users    @relation(fields: [user_id], references: [id])
 }
 
