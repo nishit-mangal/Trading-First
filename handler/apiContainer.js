@@ -156,7 +156,7 @@ export async function callApiToGetUserProfile(accessToken){
   let config = {
     method: "get",
     maxBodyLength: Infinity,
-    url: UpstoxBaseURLV2+"/user/profile",
+    url: UpstoxBaseURLV2+`/user/profile`,
     headers: headers
   };
   try {
