@@ -2,6 +2,8 @@ import axios from "axios";
 import { headers } from "../Constants/authorizationConst.js";
 import {} from 'dotenv/config'
 
+const UpstoxBaseURLV2 = process.env.BASE_URL_V2
+
 export async function callApiToGetHoldings(accessToken) {
   if(accessToken)
     headers["Authorization"] = accessToken;
@@ -9,7 +11,7 @@ export async function callApiToGetHoldings(accessToken) {
   let config = {
     method: "get",
     maxBodyLength: Infinity,
-    url: "https://api.upstox.com/v2/portfolio/long-term-holdings",
+    url: `${UpstoxBaseURLV2}/portfolio/long-term-holdings`,
     headers,
   };
   try {
@@ -144,4 +146,24 @@ export async function callApiToGetGoogleProfile(accessToken){
     url: `${process.env.GOOGLE_API_BASE_URL}/oauth2/v1/userinfo?alt=json&access_token=${accessToken}`
   };
   return await axios(config);
+}
+
+export async function callApiToGetUserProfile(accessToken){
+  if(accessToken)
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  headers["Content-Type"] = "application/json";
+  
+  let config = {
+    method: "get",
+    maxBodyLength: Infinity,
+    url: `${UpstoxBaseURLV2}/user/profile`,
+    headers: headers
+  };
+  try {
+    const profileDataResponse = await axios(config)
+    return profileDataResponse.data.data;
+  } catch (err) {
+    console.log(err.response?.data ?? err);
+    return null;
+  }
 }

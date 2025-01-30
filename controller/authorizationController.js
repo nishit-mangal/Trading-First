@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import {} from "dotenv/config";
-import { createGoogleUser, generateAccessTokenHandler, verifyExistingUserAndUpdatePicture } from "../handler/authorizationHandler.js";
+import { createGoogleUser, fetchAndUpdateUserHoldings, generateAccessTokenHandler, getUpstoxUserUsingUserId, putUpstoxUserDetails, verifyExistingUserAndUpdatePicture } from "../handler/authorizationHandler.js";
 import { HTTP_MESSAGE, HttpCode } from "../Constants/constants.js";
 import { checkIfUserExistWithEmail, getUserById } from "../handler/userHandler.js";
 import { googleApiClient } from "../Clients/googleAPI.js";
-import { callApiToGetGoogleProfile } from "../handler/apiContainer.js";
+import { callApiToGetGoogleProfile, callApiToGetUserProfile } from "../handler/apiContainer.js";
 
 export async function generateAccessToken(req, res) {
   let response = {
@@ -29,6 +29,39 @@ export async function generateAccessToken(req, res) {
     if(!newAccessCode)
       throw 'Code Not Generated'
 
+    //get relevant upstox user
+    let existingUpstoxUserProfile = await getUpstoxUserUsingUserId(user.id);
+
+    /**
+     * Contains:
+     * email:string, exchanges:string[], products:string[],
+     * broker:string, user_id:string, user_name:string, is_active:boolean
+     */
+    let upstoxProfile = await callApiToGetUserProfile(newAccessCode);
+    if(!upstoxProfile){
+      response.responseCode = HttpCode.INTERNAL_SERVER_ERROR;
+      response.responseMessage = "Failed fetching upstox user details. Try generating the token again.";
+      throw "Failed fetching upstox user details.";
+    }
+    
+    if(!existingUpstoxUserProfile){
+      //save user profile
+      await putUpstoxUserDetails(upstoxProfile, user.id);
+      
+      response.responseCode = HttpCode.SUCCESS;
+      response.responseMessage = "Successfully generated code.";
+      response.data = newAccessCode;    
+      return res.json(response);
+    }
+    
+    if(upstoxProfile.email !== existingUpstoxUserProfile.email){
+      response.responseCode = HttpCode.UNAUTHORIZED;
+      response.responseMessage = `Looks like you have enetered the api details for a different user. Put API details for ${existingUpstoxUserProfile.email}`;
+      throw "Different user detected.";
+    }
+
+    fetchAndUpdateUserHoldings(newAccessCode, user.id);
+    
     response.responseCode = HttpCode.SUCCESS;
     response.responseMessage = "Successfully generated code.";
     response.data = newAccessCode;
