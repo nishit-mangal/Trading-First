@@ -55,7 +55,6 @@ export async function putUpstoxUserDetails(upstoxProfile, userId){
       user_id: userId
     }
   });
-  console.log("upstoxUser in fn::putUpstoxUserDetails: ", upstoxUser);
     
   return upstoxUser ? upstoxUser : null;
 }
@@ -101,5 +100,6 @@ export async function fetchAndUpdateUserHoldings(accessCode, userId){
    */
   let holdings = await callApiToGetHoldings(`Bearer ${accessCode}`);
   let filteredHolding = filterHoldings(holdings, userId);
+  console.log("holdings", filteredHolding, userId);
   await updateUserHoldings(filteredHolding, userId);
 }
