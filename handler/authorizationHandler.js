@@ -100,6 +100,5 @@ export async function fetchAndUpdateUserHoldings(accessCode, userId){
    */
   let holdings = await callApiToGetHoldings(`Bearer ${accessCode}`);
   let filteredHolding = filterHoldings(holdings, userId);
-  console.log("holdings", filteredHolding, userId);
   await updateUserHoldings(filteredHolding, userId);
 }
