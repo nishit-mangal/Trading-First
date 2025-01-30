@@ -2,7 +2,7 @@ import axios from "axios";
 import { headers } from "../Constants/authorizationConst.js";
 import {} from 'dotenv/config'
 
-const UpstoxBaseURLV2 = process.env.BASE_URL_V2
+const UpstoxBaseURLV2 = `${process.env.BASE_URL_V2}`
 console.log("UpstoxBaseURLV2: ", UpstoxBaseURLV2);
 export async function callApiToGetHoldings(accessToken) {
   if(accessToken)
