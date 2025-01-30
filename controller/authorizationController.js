@@ -24,14 +24,16 @@ export async function generateAccessToken(req, res) {
       response.responseMessage = "User doesn't exist.";
       throw "User does not exist.";
     }
-    
+    console.log("user: ", user);
     let newAccessCode = await generateAccessTokenHandler(req.query.code, user.user_api_secret, user.user_api_key);
     if(!newAccessCode)
       throw 'Code Not Generated'
-
+    console.log("newAccessCode: ", newAccessCode);
+    
     //get relevant upstox user
     let existingUpstoxUserProfile = await getUpstoxUserUsingUserId(user.id);
-
+    console.log("existingUpstoxUserProfile: ", existingUpstoxUserProfile);
+    
     /**
      * Contains:
      * email:string, exchanges:string[], products:string[],
@@ -43,10 +45,11 @@ export async function generateAccessToken(req, res) {
       response.responseMessage = "Failed fetching upstox user details. Try generating the token again.";
       throw "Failed fetching upstox user details.";
     }
+    console.log("upstoxProfile: ", upstoxProfile);
     
     if(!existingUpstoxUserProfile){
       //save user profile
-      await putUpstoxUserDetails(upstoxProfile, user.id);
+      putUpstoxUserDetails(upstoxProfile, user.id);
       
       response.responseCode = HttpCode.SUCCESS;
       response.responseMessage = "Successfully generated code.";

@@ -55,6 +55,8 @@ export async function putUpstoxUserDetails(upstoxProfile, userId){
       user_id: userId
     }
   });
+  console.log("upstoxUser in fn::putUpstoxUserDetails: ", upstoxUser);
+    
   return upstoxUser ? upstoxUser : null;
 }
 
