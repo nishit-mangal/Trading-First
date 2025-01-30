@@ -42,7 +42,6 @@ export async function generateAccessToken(req, res) {
       response.responseMessage = "Failed fetching upstox user details. Try generating the token again.";
       throw "Failed fetching upstox user details.";
     }
-    console.log("upstoxProfile: ", upstoxProfile);
     
     if(!existingUpstoxUserProfile){
       //save user profile
