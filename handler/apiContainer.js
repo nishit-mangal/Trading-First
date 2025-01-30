@@ -3,7 +3,7 @@ import { headers } from "../Constants/authorizationConst.js";
 import {} from 'dotenv/config'
 
 const UpstoxBaseURLV2 = process.env.BASE_URL_V2
-
+console.log("UpstoxBaseURLV2: ", UpstoxBaseURLV2);
 export async function callApiToGetHoldings(accessToken) {
   if(accessToken)
     headers["Authorization"] = accessToken;
@@ -156,7 +156,7 @@ export async function callApiToGetUserProfile(accessToken){
   let config = {
     method: "get",
     maxBodyLength: Infinity,
-    url: UpstoxBaseURLV2+`/user/profile`,
+    url: 'https://api.upstox.com/v2/user/profile',
     headers: headers
   };
   try {
