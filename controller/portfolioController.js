@@ -37,7 +37,7 @@ export async function getHoldings(req, res) {
 
     let to_date = (new Date().toISOString().split("T")[0]);
     let from_date = get1YearBeforeDate()
-    console.log("todate:", to_date);
+    
     let i=0
     for(let stock of filteredHoldings){
       i++

@@ -41,6 +41,7 @@ model users {
   user_api_key    String?        @db.Uuid
   user_api_secret String?        @db.VarChar(255)
   picture         String?        @db.VarChar(255)
+  created_at      DateTime       @default(now())
   holdings        holdings[]
   otps            otp[]
   upstox_users    upstox_users[]
