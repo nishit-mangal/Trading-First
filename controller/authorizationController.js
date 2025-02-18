@@ -44,9 +44,11 @@ export async function generateAccessToken(req, res) {
     }
     
     if(!existingUpstoxUserProfile){
-      //save user profile
+      //save upstox user profile in db
       putUpstoxUserDetails(upstoxProfile, user.id);
-      
+      //update the holdings
+      fetchAndUpdateUserHoldings(newAccessCode, user.id);
+
       response.responseCode = HttpCode.SUCCESS;
       response.responseMessage = "Successfully generated code.";
       response.data = newAccessCode;    
