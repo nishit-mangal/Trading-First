@@ -45,13 +45,16 @@ export const wss = new WebSocketServer({server: serverHttp});
 wss.on("connection", (client, req) => {
     try {
         console.log("Frontend client connected");
-        const token = req.url.split("=")[1];
+        
+        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+        const token = requestUrl.searchParams.get("token");
+        const userId = requestUrl.searchParams.get("userId");
         
         client.on("message", async (message) => {
             console.log("\nReceived message from frontend:", message.toString());
-            
-            if(message.toString().includes("SUBSCRIBE"))
-                await clientSubscriptionInstance.clientSubscribesToTicker(message.toString().split(" ")[1], client, token);
+            const splitMsg = message.toString().split(" ");
+            if(splitMsg[0]==="SUBSCRIBE")
+                await clientSubscriptionInstance.clientSubscribesToTicker(splitMsg[1], userId, token);
             
             console.log("Active tickers:", clientSubscriptionInstance.getArrayOfActiveTickers());            
         });
