@@ -13,6 +13,11 @@ class ClientSubscriptionManager{
      */
     #clientTickerMap = new Map();
 
+    /**
+     * This is one-one Map to store websocket clients related to a particular user 
+     */
+    #userClientMap = new Map();
+
     constructor() {
         // Private to prevent instantiation from outside
         if (ClientSubscriptionManager.#instance) 
@@ -32,8 +37,10 @@ class ClientSubscriptionManager{
     get clientTickerMap(){
         return this.#clientTickerMap;
     }
-
-    getClientsFromTicker(tickerName){
+    get userClientMap(){
+        return this.#userClientMap;
+    }
+    getUsersFromTicker(tickerName){
         if(!tickerName)
             throw "tickerName is needed to fetch the client Array.";
 
@@ -43,6 +50,12 @@ class ClientSubscriptionManager{
         return Array.from(this.#tickerClientsMap.keys()) || [];
     }
     
+    updateClientForUser(userId, client){
+        this.#userClientMap.set(userId, client);
+    }
+    getWebsocketClientForUser(userId){
+        return this.#userClientMap.get(userId);
+    }
     async clientSubscribesToTicker(tickerName, clientId, token){
         try{
             if(!tickerName || !clientId || !token)
