@@ -91,7 +91,7 @@ export const subscribeToTicker = async (token) => {
     console.log("A new connection was built with the client but no connection exist with Upstox. \nMaking Upstox Connection")
     
     await initProtobuf(); // Initialize protobuf
-    console.log("Token received:",token);
+    
     const wsUrl = await getMarketFeedUrl(token); // Get the market feed URL
     if(!wsUrl)
       throw 'URL not generated to connect Websocket'
