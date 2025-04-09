@@ -51,6 +51,8 @@ wss.on("connection", (client, req) => {
         const token = requestUrl.searchParams.get("token");
         const userId = requestUrl.searchParams.get("userId");
         
+        console.log("Token: ", token, ", userId: ", userId);
+        
         clientSubscriptionInstance.updateClientForUser(userId, client);
         client.on("message", async (message) => {
             console.log("\nReceived message from frontend:", message.toString());
