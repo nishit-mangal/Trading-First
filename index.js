@@ -17,7 +17,8 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 const port = process.env.PORT ?? 8000;
-
+const protocol = process.env.ENVIRONMENT === "PROD" ? "https" : "http"
+        
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json())
 app.use(cors({ origin: [
@@ -45,8 +46,7 @@ export const wss = new WebSocketServer({server: serverHttp});
 wss.on("connection", (client, req) => {
     try {
         console.log("Frontend client connected");
-        
-        const requestUrl = new URL(req.url, `https://${req.headers.host}`);
+        const requestUrl = new URL(req.url, `${protocol}://${req.headers.host}`);
         console.log("requestUrl: ", requestUrl);
         const token = requestUrl.searchParams.get("token");
         const userId = requestUrl.searchParams.get("userId");
