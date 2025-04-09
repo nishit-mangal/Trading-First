@@ -46,7 +46,8 @@ wss.on("connection", (client, req) => {
     try {
         console.log("Frontend client connected");
         
-        const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+        const requestUrl = new URL(req.url, `https://${req.headers.host}`);
+        console.log("requestUrl: ", requestUrl);
         const token = requestUrl.searchParams.get("token");
         const userId = requestUrl.searchParams.get("userId");
         console.log("Token in URL: ", token);
