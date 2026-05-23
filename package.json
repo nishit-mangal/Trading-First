@@ -29,5 +29,10 @@
     "upstox-js-sdk": "^2.1.0",
     "ws": "^8.16.0"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0"
+  }
 }
