@@ -1,7 +1,9 @@
-import { headers } from "../Constants/authorizationConst.js";
-import { niftyArray } from "../Constants/niftyCompanies.js";
-import axios from "axios";
-import { callApiToGetScriptDataInADateRange } from "./apiContainer.js";
+import { nifty50Companies, niftyArray } from "../Constants/niftyCompanies.js";
+import { UNIT_VALUES } from "../Constants/upstoxAPIConstants.js";
+import {
+	callApiToGetHistoricalData,
+	callApiToGetScriptDataInADateRange
+} from "./apiContainer.js";
 
 export function filterHistoricalData(candles) {
 	// console.log(candles)
@@ -528,14 +530,21 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
 
 export async function returnsForStrategyArrayV2() {
 	let response = await getNiftyCompaniesDataV2(
-		"2024-01-01",
-		"2013-11-04",
-		"month"
+		"2026-05-23",
+		"2023-08-01",
+		UNIT_VALUES.MONTHS
 	);
 	if (!response) {
 		console.log("resp", response);
 		return "Error occured while fetching monthly data for nifty.";
 	}
+	// let minYear = Number.MIN_SAFE_INTEGER;
+	// for (let i = 0; i < response.length; i++) {
+	// 	response[i].minYear = getFirstYear(response[i].monthlyData);
+	// 	if (response[i].minYear > minYear) console.log(response[i].name);
+	// 	minYear = Math.max(minYear, response[i].minYear);
+	// }
+	// console.log(minYear);
 	return response;
 	// let dataSelectingStocks = bestPerformingStockInAMonth(response);
 	// let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
@@ -578,23 +587,37 @@ export async function returnsForStrategyArrayV2() {
 }
 
 async function getNiftyCompaniesDataV2(to, from, candleTenure) {
-	let niftyDataArr = [];
-	for (let stock of niftyArray) {
-		// console.log("Fetching Data for: ", stock);
-		const instrument_key = `NSE_EQ|${stock.isin}`;
-		const interval = candleTenure;
-		const to_date = to;
-		const from_date = from;
+	const results = await Promise.allSettled(
+		nifty50Companies.map(async (stock) => {
+			const instrument_key = `NSE_EQ|${stock.isin}`;
 
-		let candleForStock = await callApiToGetScriptDataInADateRange(
-			instrument_key,
-			interval,
-			to_date,
-			from_date
+			const candleForStock = await callApiToGetHistoricalData(
+				instrument_key,
+				candleTenure,
+				to,
+				from
+			);
+			if (!candleForStock)
+				throw new Error(`Data not received for stock: ${stock.name}`);
+
+			return {
+				...stock,
+				monthlyData: candleForStock
+			};
+		})
+	);
+	let niftyDataArr = [];
+	results.forEach((result) => {
+		if (result.status === "fulfilled") {
+			niftyDataArr.push(result.value);
+			return;
+		}
+
+		console.warn(
+			`Warn in fn::getNiftyCompaniesDataV2: ${
+				result.reason?.message ?? result.reason
+			}`
 		);
-		if (!candleForStock) continue;
-		stock.monthlyData = candleForStock;
-		niftyDataArr.push(stock);
-	}
+	});
 	return niftyDataArr;
 }

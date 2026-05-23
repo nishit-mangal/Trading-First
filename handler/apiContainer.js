@@ -41,7 +41,10 @@ export async function callApiToGetScriptDataInADateRange(
 		const historicalData = await axios(config);
 		return historicalData.data.data.candles;
 	} catch (err) {
-		console.log(err.response?.data ?? err);
+		console.error(
+			"Error in fn::callApiToGetScriptDataInADateRange",
+			err.response?.data ?? err
+		);
 		return null;
 	}
 }
@@ -186,7 +189,10 @@ export async function callApiToGetHistoricalData(
 		const historicalData = await axios(config);
 		return historicalData.data.data.candles;
 	} catch (err) {
-		console.log(err.response?.data ?? err);
+		console.error(
+			"Error in fn::callApiToGetHistoricalData:",
+			err.response?.data ?? err
+		);
 		return null;
 	}
 }
