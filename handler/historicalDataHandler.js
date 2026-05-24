@@ -30,7 +30,7 @@ export function probOfNextMonthIncresingGivenPrevnIncrease(monthPriceArr, n) {
 		if (isConsiderable) {
 			sampleSize++;
 			if (monthPriceArr[i].greenCandle) {
-				console.log(monthPriceArr[i].date);
+				// console.log(monthPriceArr[i].date);
 				thisMonthHasIncreased++;
 			}
 		}
@@ -89,7 +89,8 @@ function bestPerformingStockInAMonth(niftyArr) {
 	let stockOfTheMonthMap = new Map();
 
 	for (let stock of niftyArr) {
-		let monthsData = stock.monthlyData.reverse();
+		let monthsData = [...stock.monthlyData];
+		monthsData.reverse();
 		for (let i = 0; i < monthsData.length; i++) {
 			const month = monthsData[i];
 
@@ -122,25 +123,32 @@ function bestPerformingStockInAMonth(niftyArr) {
 }
 
 function mapCompanyMonthlyReturns(niftyArr) {
+	if (!niftyArr) return null;
+
 	let mapOfCompany = new Map();
-	let mapArr;
 
 	for (let stock of niftyArr) {
-		mapArr = [];
-		let monthsData = stock.monthlyData;
-		for (let month of monthsData) {
-			let monthObj = {
-				date: "",
-				return: 0.0
-			};
-			monthObj.return = ((month[4] - month[1]) / month[1]) * 100;
+		let mapArr = [];
+		let monthsData = [...stock.monthlyData];
+		monthsData.reverse();
+
+		for (let i = 0; i < monthsData.length; i++) {
+			const month = monthsData[i];
+
 			const dateMod = new Date(month[0]);
 			const parsedDate = `${dateMod.getFullYear()}-${
 				dateMod.getMonth() + 1
 			}-${dateMod.getDate()}`;
 
-			monthObj.date = parsedDate;
-			mapArr.push(monthObj);
+			const final = month[4],
+				initial = i > 0 ? monthsData[i - 1][4] : month[1];
+			const monthReturn = ((final - initial) / initial) * 100;
+
+			let stockReturnObj = {
+				return: monthReturn,
+				date: parsedDate
+			};
+			mapArr.push(stockReturnObj);
 		}
 		mapOfCompany.set(stock.name, mapArr);
 	}
@@ -162,19 +170,19 @@ export function tradingStrategy(
 			continue;
 		}
 
-		console.log("\n\nThis Month:", bestStocks[0]);
+		// console.log("\n\nThis Month:", bestStocks[0]);
 
 		let newPortfolio = [];
 		let monthlyReturns = 0.0;
 		prevPortfolio = portfolio[portfolio.length - 1];
-		console.log("Pre Portfolio:", prevPortfolio);
+		// console.log("Pre Portfolio:", prevPortfolio);
 
 		let thisMonthRet = rearrangePrevMonthPortfolio(
 			prevPortfolio,
 			bestStocks[0],
 			companyReturnsMap
 		);
-		console.log("This Month Perf: ", thisMonthRet);
+		// console.log("This Month Perf: ", thisMonthRet);
 
 		for (let i = 0; i < 20; i++) {
 			monthlyReturns += thisMonthRet[i].return;
@@ -191,7 +199,7 @@ export function tradingStrategy(
 		// console.log("Best Stocks: ")
 		for (let i = 0; i < 6; i++) {
 			newPortfolio.push(bestStocks[1][i]);
-			console.log(bestStocks[1][i]);
+			// console.log(bestStocks[1][i]);
 		}
 		portfolio.push(newPortfolio);
 	}
@@ -522,20 +530,14 @@ export async function returnsForStrategyArrayV2() {
 	}
 
 	let dataSelectingStocks = bestPerformingStockInAMonth(response);
-	// console.log(dataSelectingStocks);
-	return dataSelectingStocks;
-	// let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
-	// console.log("Best Performing Stocks", dataSelectingStocks.get("2024-1-1"));
-	// console.log("Map Of company Returns TCS", mapOfCompanyReturns.get("TCS"));
-	// let arrayOfDataSelectingStocks = Array.from(
-	// 	dataSelectingStocks.entries()
-	// ).reverse();
-	// // console.log("Array", arrayOfDataSelectingStocks[0])
-	// // console.log("Map", mapOfCompanyReturns)
+	let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
+	const arrayOfDataSelectingStocks = Array.from(dataSelectingStocks.entries());
 	// let portfolio = tradingStrategy(
 	// 	arrayOfDataSelectingStocks,
 	// 	mapOfCompanyReturns
 	// );
+	// console.log("portfolio:", portfolio);
+	return dataSelectingStocks;
 	// // console.log("Portfoilo length:", portfolio.length);
 	// // console.log("Portfoilo:", portfolio)
 	// let start = 100;
