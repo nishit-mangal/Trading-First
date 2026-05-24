@@ -78,5 +78,7 @@ export async function stopLossStrategy(req, res) {
 
 export async function getHistoricalDataForNiftyCompanies(req, res) {
 	const returnArray = await returnsForStrategyArrayV2();
-	return res.json({ data: returnArray });
+	// console.log("returnArray:", returnArray);
+	const obj = Object.fromEntries(returnArray);
+	return res.json({ data: obj });
 }

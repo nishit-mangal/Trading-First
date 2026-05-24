@@ -87,56 +87,38 @@ function bestPerformingStockInAMonth(niftyArr) {
 	}
 
 	let stockOfTheMonthMap = new Map();
-	let stockReturnObj;
 
 	for (let stock of niftyArr) {
-		let monthsData = stock.monthlyData;
-		for (let month of monthsData) {
-			stockReturnObj = {
-				name: stock.name,
-				return: ((month[4] - month[1]) / month[1]) * 100
-			};
+		let monthsData = stock.monthlyData.reverse();
+		for (let i = 0; i < monthsData.length; i++) {
+			const month = monthsData[i];
+
 			const dateMod = new Date(month[0]);
 			const parsedDate = `${dateMod.getFullYear()}-${
 				dateMod.getMonth() + 1
 			}-${dateMod.getDate()}`;
+
+			const final = month[4],
+				initial = i > 0 ? monthsData[i - 1][4] : month[1];
+			const monthReturn = ((final - initial) / initial) * 100;
+
+			let stockReturnObj = {
+				name: stock.name,
+				return: monthReturn
+			};
 			let prevDataPoint = stockOfTheMonthMap.get(parsedDate);
-			let modifiedArr = putNewDataPoint(prevDataPoint, stockReturnObj, 20);
-			stockOfTheMonthMap.set(parsedDate, modifiedArr);
+			if (!prevDataPoint) prevDataPoint = [];
+			prevDataPoint.push(stockReturnObj);
+			stockOfTheMonthMap.set(parsedDate, prevDataPoint);
 		}
 	}
 
-	// stockOfTheMonthMap.forEach((value, key) => {
-	//   console.log(`Key: ${key} Value: `, value);
-	// });
+	for (const [date, arr] of stockOfTheMonthMap) {
+		arr.sort((a, b) => b.return - a.return);
+		stockOfTheMonthMap.set(date, arr);
+	}
 
 	return stockOfTheMonthMap;
-}
-
-function putNewDataPoint(arr, dataPoint, numOfBestStocksNeeded) {
-	if (!arr) {
-		let newArr = [];
-		newArr.push(dataPoint);
-		// console.log("Arr not defined", newArr)
-		return newArr;
-	}
-	let newArr = arr;
-	if (newArr.length < numOfBestStocksNeeded) {
-		arr.push(dataPoint);
-		return newArr;
-	}
-
-	for (let i = newArr.length - 1; i >= 0; i--) {
-		if (newArr[i].return < dataPoint.return) {
-			// console.log("Replaced",arr[i] , dataPoint)
-			newArr[i] = dataPoint;
-			break;
-		}
-	}
-	arr.sort(function (a, b) {
-		return b.return - a.return;
-	});
-	return newArr;
 }
 
 function mapCompanyMonthlyReturns(niftyArr) {
@@ -538,15 +520,10 @@ export async function returnsForStrategyArrayV2() {
 		console.log("resp", response);
 		return "Error occured while fetching monthly data for nifty.";
 	}
-	// let minYear = Number.MIN_SAFE_INTEGER;
-	// for (let i = 0; i < response.length; i++) {
-	// 	response[i].minYear = getFirstYear(response[i].monthlyData);
-	// 	if (response[i].minYear > minYear) console.log(response[i].name);
-	// 	minYear = Math.max(minYear, response[i].minYear);
-	// }
-	// console.log(minYear);
-	return response;
-	// let dataSelectingStocks = bestPerformingStockInAMonth(response);
+
+	let dataSelectingStocks = bestPerformingStockInAMonth(response);
+	// console.log(dataSelectingStocks);
+	return dataSelectingStocks;
 	// let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
 	// console.log("Best Performing Stocks", dataSelectingStocks.get("2024-1-1"));
 	// console.log("Map Of company Returns TCS", mapOfCompanyReturns.get("TCS"));
