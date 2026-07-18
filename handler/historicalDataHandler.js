@@ -166,7 +166,7 @@ export function tradingStrategy(
 	for (let bestStocks of arrayOfBestPerformingStocks) {
 		if (portfolio.length === 0) {
 			// console.log("Starting month: ", bestStocks[0]);
-			portfolio.push(bestStocks[1]);
+			portfolio.push(bestStocks[1].slice(0, 5));
 			continue;
 		}
 
@@ -184,9 +184,9 @@ export function tradingStrategy(
 		);
 		// console.log("This Month Perf: ", thisMonthRet);
 
-		for (let i = 0; i < 20; i++) {
+		for (let i = 0; i < 5; i++) {
 			monthlyReturns += thisMonthRet[i].return;
-			if (i < 14) {
+			if (i < 3) {
 				let newPortfolioObj = {};
 				newPortfolioObj.name = thisMonthRet[i].name;
 				newPortfolioObj.return = thisMonthRet[i].return;
@@ -197,7 +197,7 @@ export function tradingStrategy(
 		portfolioMonthlyReturns.push(monthlyReturns / 20);
 
 		// console.log("Best Stocks: ")
-		for (let i = 0; i < 6; i++) {
+		for (let i = 0; i < 2; i++) {
 			newPortfolio.push(bestStocks[1][i]);
 			// console.log(bestStocks[1][i]);
 		}
@@ -207,14 +207,13 @@ export function tradingStrategy(
 	return portfolioMonthlyReturns;
 }
 
-export function rearrangePrevMonthPortfolio(prevPortfolio, month, stockMap) {
+function rearrangePrevMonthPortfolio(prevPortfolio, month, stockMap) {
 	if (!prevPortfolio) {
 		return null;
 	}
 	let sortedPortfolio = [];
-	let monthlyReturnsArray;
 	for (let i = 0; i < prevPortfolio.length; i++) {
-		monthlyReturnsArray = stockMap.get(prevPortfolio[i].name);
+		let monthlyReturnsArray = stockMap.get(prevPortfolio[i].name);
 		for (let monthReturn of monthlyReturnsArray) {
 			if (monthReturn.date === month) {
 				monthReturn.name = prevPortfolio[i].name;
@@ -532,10 +531,10 @@ export async function returnsForStrategyArrayV2() {
 	let dataSelectingStocks = bestPerformingStockInAMonth(response);
 	let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
 	const arrayOfDataSelectingStocks = Array.from(dataSelectingStocks.entries());
-	// let portfolio = tradingStrategy(
-	// 	arrayOfDataSelectingStocks,
-	// 	mapOfCompanyReturns
-	// );
+	let portfolio = tradingStrategy(
+		arrayOfDataSelectingStocks,
+		mapOfCompanyReturns
+	);
 	// console.log("portfolio:", portfolio);
 	return dataSelectingStocks;
 	// // console.log("Portfoilo length:", portfolio.length);
