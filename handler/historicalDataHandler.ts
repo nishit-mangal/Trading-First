@@ -1,6 +1,12 @@
 import { nifty50Companies, niftyArray } from "../Constants/niftyCompanies.js";
 import { UNIT_VALUES } from "../Constants/upstoxAPIConstants.js";
 import {
+	ICandleForStock,
+	IStockDateReturn,
+	IStockNameReturn
+} from "../interfaces/historicalDataHandler.js";
+import type { INifty50Companies } from "../interfaces/niftyCompaniesInterfaces.js";
+import {
 	callApiToGetHistoricalData,
 	callApiToGetScriptDataInADateRange
 } from "./apiContainer.js";
@@ -10,7 +16,7 @@ export function filterHistoricalData(candles) {
 	let filteredArr = [];
 	for (let candle of candles) {
 		const parsedDate = new Date(candle[0]);
-		let tempObj = {};
+		let tempObj: any = {};
 		tempObj.date = parsedDate.toISOString().split("T")[0];
 		tempObj.closePrice = candle[4];
 		tempObj.openPrice = candle[1];
@@ -81,21 +87,22 @@ async function callApiToGetNiftyData(to, from, candleTenure) {
 	return niftyDataArr;
 }
 
-function bestPerformingStockInAMonth(niftyArr) {
-	if (!niftyArr) {
-		return null;
-	}
+function bestPerformingStockInAMonth(niftyArr: ICandleForStock[]) {
+	if (niftyArr.length === 0)
+		throw new Error(
+			"Error in fn::bestPerformingStockInAMonth.\nNo data received in input."
+		);
 
-	let stockOfTheMonthMap = new Map();
-
+	let stockOfTheMonthMap = new Map<string, IStockNameReturn[]>();
 	for (let stock of niftyArr) {
 		let monthsData = [...stock.monthlyData];
 		monthsData.reverse();
 		for (let i = 0; i < monthsData.length; i++) {
+			// Date, Open, High, Low, Close, Volume, NA
 			const month = monthsData[i];
 
 			const dateMod = new Date(month[0]);
-			const parsedDate = `${dateMod.getFullYear()}-${
+			const parsedDate: string = `${dateMod.getFullYear()}-${
 				dateMod.getMonth() + 1
 			}-${dateMod.getDate()}`;
 
@@ -103,7 +110,10 @@ function bestPerformingStockInAMonth(niftyArr) {
 				initial = i > 0 ? monthsData[i - 1][4] : month[1];
 			const monthReturn = ((final - initial) / initial) * 100;
 
-			let stockReturnObj = {
+			let stockReturnObj: {
+				name: string;
+				return: number;
+			} = {
 				name: stock.name,
 				return: monthReturn
 			};
@@ -122,13 +132,16 @@ function bestPerformingStockInAMonth(niftyArr) {
 	return stockOfTheMonthMap;
 }
 
-function mapCompanyMonthlyReturns(niftyArr) {
-	if (!niftyArr) return null;
+function mapCompanyMonthlyReturns(niftyArr: ICandleForStock[]) {
+	if (niftyArr.length === 0)
+		throw new Error(
+			"Error in fn::mapCompanyMonthlyReturns.\nNo data received in input."
+		);
 
 	let mapOfCompany = new Map();
 
 	for (let stock of niftyArr) {
-		let mapArr = [];
+		let mapArr: IStockDateReturn[] = [];
 		let monthsData = [...stock.monthlyData];
 		monthsData.reverse();
 
@@ -144,7 +157,7 @@ function mapCompanyMonthlyReturns(niftyArr) {
 				initial = i > 0 ? monthsData[i - 1][4] : month[1];
 			const monthReturn = ((final - initial) / initial) * 100;
 
-			let stockReturnObj = {
+			let stockReturnObj: IStockDateReturn = {
 				return: monthReturn,
 				date: parsedDate
 			};
@@ -242,7 +255,7 @@ export async function returnsForStrategyArray() {
 	let dataSelectingStocks = bestPerformingStockInAMonth(response);
 	let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
 	console.log("Best Performing Stocks", dataSelectingStocks.get("2024-1-1"));
-	console.log("Map Of company Returns TCS", mapOfCompanyReturns.get("TCS"));
+	// console.log("Map Of company Returns TCS", mapOfCompanyReturns.get("TCS"));
 	let arrayOfDataSelectingStocks = Array.from(
 		dataSelectingStocks.entries()
 	).reverse();
@@ -518,19 +531,21 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
 /***********************#############################################******************************** */
 
 export async function returnsForStrategyArrayV2() {
-	let response = await getNiftyCompaniesDataV2(
-		"2026-05-23",
+	let response: ICandleForStock[] = await getNiftyCompaniesDataV2(
+		"2026-07-20",
 		"2023-08-01",
 		UNIT_VALUES.MONTHS
 	);
-	if (!response) {
-		console.log("resp", response);
-		return "Error occured while fetching monthly data for nifty.";
-	}
+	if (response.length === 0)
+		throw new Error(
+			`Error in fn::returnsForStrategyArrayV2. \n No candle data received for nifty fifty companies.`
+		);
 
 	let dataSelectingStocks = bestPerformingStockInAMonth(response);
 	let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
-	const arrayOfDataSelectingStocks = Array.from(dataSelectingStocks.entries());
+	const arrayOfDataSelectingStocks: [string, IStockNameReturn[]][] = Array.from(
+		dataSelectingStocks.entries()
+	);
 	let portfolio = tradingStrategy(
 		arrayOfDataSelectingStocks,
 		mapOfCompanyReturns
@@ -564,33 +579,37 @@ export async function returnsForStrategyArrayV2() {
 	// return portfolio.splice(portfolio.length - 112, 112);
 }
 
-async function getNiftyCompaniesDataV2(to, from, candleTenure) {
-	const results = await Promise.allSettled(
-		nifty50Companies.map(async (stock) => {
-			const instrument_key = `NSE_EQ|${stock.isin}`;
+async function getNiftyCompaniesDataV2(
+	to: string,
+	from: string,
+	candleTenure: string
+) {
+	const results: PromiseSettledResult<ICandleForStock>[] =
+		await Promise.allSettled(
+			nifty50Companies.map(async (stock: INifty50Companies) => {
+				const instrument_key = `NSE_EQ|${stock.isin}`;
 
-			const candleForStock = await callApiToGetHistoricalData(
-				instrument_key,
-				candleTenure,
-				to,
-				from
-			);
-			if (!candleForStock)
-				throw new Error(`Data not received for stock: ${stock.name}`);
+				const candleForStock: any[] = await callApiToGetHistoricalData(
+					instrument_key,
+					candleTenure,
+					to,
+					from
+				);
+				if (candleForStock.length === 0)
+					throw new Error(`Data not received for stock: ${stock.name}`);
 
-			return {
-				...stock,
-				monthlyData: candleForStock
-			};
-		})
-	);
-	let niftyDataArr = [];
-	results.forEach((result) => {
+				return {
+					...stock,
+					monthlyData: candleForStock
+				};
+			})
+		);
+	let niftyDataArr: ICandleForStock[] = [];
+	results.forEach((result: PromiseSettledResult<ICandleForStock>) => {
 		if (result.status === "fulfilled") {
 			niftyDataArr.push(result.value);
 			return;
 		}
-
 		console.warn(
 			`Warn in fn::getNiftyCompaniesDataV2: ${
 				result.reason?.message ?? result.reason

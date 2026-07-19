@@ -1,4 +1,9 @@
-export const niftyArray = [
+import type {
+	INifty50Companies,
+	INiftyArray
+} from "../interfaces/niftyCompaniesInterfaces.js";
+
+export const niftyArray: INiftyArray[] = [
 	{ name: "ADANIPORTS", isin: "INE742F01042" },
 	{ name: "ASIANPAINT", isin: "INE021A01026" },
 	{ name: "YESBANK", isin: "INE528G01035" },
@@ -50,7 +55,7 @@ export const niftyArray = [
 	{ name: "ZEEL", isin: "INE256A01028" }
 ];
 
-export const nifty50Companies = [
+export const nifty50Companies: INifty50Companies[] = [
 	{
 		name: "Adani Enterprises Ltd.",
 		symbol: "ADANIENT",

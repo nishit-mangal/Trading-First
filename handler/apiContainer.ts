@@ -6,7 +6,7 @@ import { API_ENDPOINTS } from "../Constants/upstoxAPIConstants.js";
 const UpstoxBaseURLV2 = process.env.UPSTOX_BASE_URL_V2;
 const UPSTOX_BASE_URL_V3 = process.env.UPSTOX_BASE_URL_V3;
 
-export async function callApiToGetHoldings(accessToken) {
+export async function callApiToGetHoldings(accessToken: string) {
 	if (accessToken) headers["Authorization"] = accessToken;
 
 	let config = {
@@ -173,10 +173,10 @@ export async function callApiToGetUserProfile(accessToken) {
 }
 
 export async function callApiToGetHistoricalData(
-	instrument_key,
-	unit,
-	to_date,
-	from_date
+	instrument_key: string,
+	unit: string,
+	to_date: string,
+	from_date: string
 ) {
 	let config = {
 		method: "get",
@@ -188,11 +188,11 @@ export async function callApiToGetHistoricalData(
 	try {
 		const historicalData = await axios(config);
 		return historicalData.data.data.candles;
-	} catch (err) {
+	} catch (err: any) {
 		console.error(
 			"Error in fn::callApiToGetHistoricalData:",
 			err.response?.data ?? err
 		);
-		return null;
+		return [];
 	}
 }
