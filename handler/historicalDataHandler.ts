@@ -110,10 +110,7 @@ function bestPerformingStockInAMonth(niftyArr: ICandleForStock[]) {
 				initial = i > 0 ? monthsData[i - 1][4] : month[1];
 			const monthReturn = ((final - initial) / initial) * 100;
 
-			let stockReturnObj: {
-				name: string;
-				return: number;
-			} = {
+			let stockReturnObj: IStockNameReturn = {
 				name: stock.name,
 				return: monthReturn
 			};
