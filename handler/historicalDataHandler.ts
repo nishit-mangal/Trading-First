@@ -3,6 +3,7 @@ import { UNIT_VALUES } from "../Constants/upstoxAPIConstants.js";
 import {
 	ICandleForStock,
 	IStockDateReturn,
+	IStockNameDateReturn,
 	IStockNameReturn
 } from "../interfaces/historicalDataHandler.js";
 import type { INifty50Companies } from "../interfaces/niftyCompaniesInterfaces.js";
@@ -67,7 +68,7 @@ function isPrevnMonthsGreen(subArray) {
 
 async function callApiToGetNiftyData(to, from, candleTenure) {
 	let niftyDataArr = [];
-	for (let stock of niftyArray) {
+	for (let stock of niftyArray as any) {
 		// console.log("Fetching Data for: ", stock);
 		const instrument_key = `NSE_EQ|${stock.isin}`;
 		const interval = candleTenure;
@@ -135,7 +136,7 @@ function mapCompanyMonthlyReturns(niftyArr: ICandleForStock[]) {
 			"Error in fn::mapCompanyMonthlyReturns.\nNo data received in input."
 		);
 
-	let mapOfCompany = new Map();
+	let mapOfCompany = new Map<string, IStockDateReturn[]>();
 
 	for (let stock of niftyArr) {
 		let mapArr: IStockDateReturn[] = [];
@@ -166,67 +167,72 @@ function mapCompanyMonthlyReturns(niftyArr: ICandleForStock[]) {
 }
 
 export function tradingStrategy(
-	arrayOfBestPerformingStocks,
-	companyReturnsMap
+	dateCompanyReturnArray: [string, IStockNameReturn[]][],
+	companyDateReturnsMap: Map<string, IStockDateReturn[]>
 ) {
-	// console.log("Company Returns Map:", companyReturnsMap);
-	let portfolio = [];
-	let portfolioMonthlyReturns = [];
-	let prevPortfolio;
-	for (let bestStocks of arrayOfBestPerformingStocks) {
+	const BUCKET_SIZE: number = 10,
+		KEEPING_SIZE = 4;
+	let portfolio: IStockNameReturn[][] = [];
+	let portfolioMonthlyReturns: IStockDateReturn[] = [];
+	for (let bestStocks of dateCompanyReturnArray) {
 		if (portfolio.length === 0) {
-			// console.log("Starting month: ", bestStocks[0]);
-			portfolio.push(bestStocks[1].slice(0, 5));
+			portfolio.push(bestStocks[1].slice(0, BUCKET_SIZE));
 			continue;
 		}
 
-		// console.log("\n\nThis Month:", bestStocks[0]);
-
-		let newPortfolio = [];
-		let monthlyReturns = 0.0;
-		prevPortfolio = portfolio[portfolio.length - 1];
-		// console.log("Pre Portfolio:", prevPortfolio);
-
-		let thisMonthRet = rearrangePrevMonthPortfolio(
-			prevPortfolio,
-			bestStocks[0],
-			companyReturnsMap
+		let prevPortfolio: IStockNameReturn[] = portfolio[portfolio.length - 1];
+		const previousPorfolioStockNames: string[] = prevPortfolio.map(
+			(p: IStockNameReturn) => p.name
 		);
-		// console.log("This Month Perf: ", thisMonthRet);
+		let thisMonthRet: IStockNameDateReturn[] = rearrangePrevMonthPortfolio(
+			previousPorfolioStockNames,
+			bestStocks[0],
+			companyDateReturnsMap
+		);
 
-		for (let i = 0; i < 5; i++) {
+		let monthlyReturns = 0.0;
+		let newPortfolio: IStockNameReturn[] = [];
+		for (let i = 0; i < BUCKET_SIZE; i++) {
 			monthlyReturns += thisMonthRet[i].return;
-			if (i < 3) {
-				let newPortfolioObj = {};
-				newPortfolioObj.name = thisMonthRet[i].name;
-				newPortfolioObj.return = thisMonthRet[i].return;
+			if (i < KEEPING_SIZE) {
+				let newPortfolioObj: IStockNameReturn = {
+					name: thisMonthRet[i].name,
+					return: thisMonthRet[i].return
+				};
 				newPortfolio.push(newPortfolioObj);
 			}
 		}
-		// console.log("Monthly Ret: ", monthlyReturns/6)
-		portfolioMonthlyReturns.push(monthlyReturns / 20);
+		const monthReturn: IStockDateReturn = {
+			date: bestStocks[0],
+			return: monthlyReturns / BUCKET_SIZE
+		};
+		portfolioMonthlyReturns.push(monthReturn);
 
-		// console.log("Best Stocks: ")
-		for (let i = 0; i < 2; i++) {
+		for (let i = 0; i < BUCKET_SIZE - KEEPING_SIZE; i++)
 			newPortfolio.push(bestStocks[1][i]);
-			// console.log(bestStocks[1][i]);
-		}
+
 		portfolio.push(newPortfolio);
 	}
 
 	return portfolioMonthlyReturns;
 }
 
-function rearrangePrevMonthPortfolio(prevPortfolio, month, stockMap) {
-	if (!prevPortfolio) {
+function rearrangePrevMonthPortfolio(
+	previousPorfolioStockNames: string[],
+	month: string,
+	companyDateReturnsMap: Map<string, IStockDateReturn[]>
+) {
+	if (previousPorfolioStockNames.length === 0) {
 		return null;
 	}
-	let sortedPortfolio = [];
-	for (let i = 0; i < prevPortfolio.length; i++) {
-		let monthlyReturnsArray = stockMap.get(prevPortfolio[i].name);
-		for (let monthReturn of monthlyReturnsArray) {
+	let sortedPortfolio: IStockNameDateReturn[] = [];
+	for (let i = 0; i < previousPorfolioStockNames.length; i++) {
+		let monthlyReturnsArray: IStockDateReturn[] = companyDateReturnsMap.get(
+			previousPorfolioStockNames[i]
+		);
+		for (let monthReturn of monthlyReturnsArray as IStockNameDateReturn[]) {
 			if (monthReturn.date === month) {
-				monthReturn.name = prevPortfolio[i].name;
+				monthReturn.name = previousPorfolioStockNames[i];
 				sortedPortfolio.push(monthReturn);
 			}
 		}
@@ -250,20 +256,20 @@ export async function returnsForStrategyArray() {
 	}
 
 	let dataSelectingStocks = bestPerformingStockInAMonth(response);
-	let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
+	let mapOfCompanyReturns: Map<string, IStockDateReturn[]> =
+		mapCompanyMonthlyReturns(response);
 	console.log("Best Performing Stocks", dataSelectingStocks.get("2024-1-1"));
 	// console.log("Map Of company Returns TCS", mapOfCompanyReturns.get("TCS"));
-	let arrayOfDataSelectingStocks = Array.from(
+	let arrayOfDataSelectingStocks: any = Array.from(
 		dataSelectingStocks.entries()
 	).reverse();
 	// console.log("Array", arrayOfDataSelectingStocks[0])
 	// console.log("Map", mapOfCompanyReturns)
-	let portfolio = tradingStrategy(
+	let portfolio: any[] = tradingStrategy(
 		arrayOfDataSelectingStocks,
 		mapOfCompanyReturns
 	);
 	// console.log("Portfoilo length:", portfolio.length);
-	// console.log("Portfoilo:", portfolio)
 	let start = 100;
 	let i = 1;
 	let count = 0;
@@ -305,8 +311,8 @@ export async function generateStrategyDataAndcompareNifty() {
 	let startStrategy = 100;
 
 	for (let i = 0; i < 112; i++) {
-		let tempStrategyObj = {};
-		let tempNiftyObj = {};
+		let tempStrategyObj: any = {};
+		let tempNiftyObj: any = {};
 		startNifty *= 1 + niftyFiftyArrayData[i];
 		tempNiftyObj.x = i + 1;
 		tempNiftyObj.y = startNifty;
@@ -442,7 +448,7 @@ function stopLossTradingStrategy(
 		for (let i = 0; i < 20; i++) {
 			monthlyReturns += thisMonthRet[i].return;
 			if (i < 14) {
-				let newPortfolioObj = {};
+				let newPortfolioObj: any = {};
 				newPortfolioObj.name = thisMonthRet[i].name;
 				newPortfolioObj.return = thisMonthRet[i].return;
 				newPortfolio.push(newPortfolioObj);
@@ -527,63 +533,69 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
 
 /***********************#############################################******************************** */
 
-export async function returnsForStrategyArrayV2() {
+export async function returnsForStrategyArrayV2(
+	backtrackingTenure: number = 3
+) {
 	let response: ICandleForStock[] = await getNiftyCompaniesDataV2(
 		"2026-07-20",
-		"2023-08-01",
-		UNIT_VALUES.MONTHS
+		"2015-01-01",
+		UNIT_VALUES.MONTHS,
+		backtrackingTenure
 	);
 	if (response.length === 0)
 		throw new Error(
 			`Error in fn::returnsForStrategyArrayV2. \n No candle data received for nifty fifty companies.`
 		);
 
-	let dataSelectingStocks = bestPerformingStockInAMonth(response);
-	let mapOfCompanyReturns = mapCompanyMonthlyReturns(response);
+	let dataSelectingStocks: Map<string, IStockNameReturn[]> =
+		bestPerformingStockInAMonth(response);
+	let mapOfCompanyReturns: Map<string, IStockDateReturn[]> =
+		mapCompanyMonthlyReturns(response);
 	const arrayOfDataSelectingStocks: [string, IStockNameReturn[]][] = Array.from(
 		dataSelectingStocks.entries()
 	);
-	let portfolio = tradingStrategy(
+	let portfolio: IStockDateReturn[] = tradingStrategy(
 		arrayOfDataSelectingStocks,
 		mapOfCompanyReturns
 	);
-	// console.log("portfolio:", portfolio);
-	return dataSelectingStocks;
-	// // console.log("Portfoilo length:", portfolio.length);
-	// // console.log("Portfoilo:", portfolio)
-	// let start = 100;
-	// let i = 1;
-	// let count = 0;
-	// let avgRet = 0;
-	// for (let monthReturn of portfolio) {
-	// 	// if(monthReturn<-10){
-	// 	//   monthReturn = -10
-	// 	// }
-	// 	monthReturn /= 100;
+	console.log("portfolio:", portfolio);
+	let start = 100;
+	let i = 1;
+	let count = 0;
+	let avgRet = 0;
+	for (let monthReturn of portfolio as IStockDateReturn[]) {
+		let returns = monthReturn.return / 100;
 
-	// 	let ret = 1 + monthReturn;
-	// 	start *= ret;
-	// 	if (monthReturn <= -0.1) {
-	// 	}
-	// 	count++;
-	// 	avgRet += monthReturn;
-	// 	console.log(i, "Start: ", start, "Month Ret: ", monthReturn);
-	// 	i++;
-	// }
-	// console.log("Avg Return:", avgRet / count);
-	// console.log("Return", start);
-	// console.log("Count", count);
+		let ret = 1 + returns;
+		start *= ret;
+		count++;
+		avgRet += returns;
+		console.log(
+			"Month:",
+			monthReturn.date,
+			"Start: ",
+			start,
+			"Month Ret: ",
+			monthReturn
+		);
+		i++;
+	}
+	console.log("Avg Return:", avgRet / count);
+	console.log("Return", start);
 	// return portfolio.splice(portfolio.length - 112, 112);
+	return dataSelectingStocks;
 }
 
 async function getNiftyCompaniesDataV2(
 	to: string,
 	from: string,
-	candleTenure: string
+	candleTenure: string,
+	backtrackingYears: number = 3
 ) {
+	const companySet = backtrackingYears === 3 ? nifty50Companies : niftyArray;
 	const results: PromiseSettledResult<ICandleForStock>[] =
 		await Promise.allSettled(
-			nifty50Companies.map(async (stock: INifty50Companies) => {
+			companySet.map(async (stock: INifty50Companies) => {
 				const instrument_key = `NSE_EQ|${stock.isin}`;
 
 				const candleForStock: any[] = await callApiToGetHistoricalData(

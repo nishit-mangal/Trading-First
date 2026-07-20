@@ -12,3 +12,6 @@ export interface IStockDateReturn {
 	date: string;
 	return: number;
 }
+export interface IStockNameDateReturn extends IStockDateReturn {
+	name: string;
+}
