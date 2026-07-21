@@ -583,7 +583,7 @@ export async function returnsForStrategyArrayV2(
 	console.log("Avg Return:", avgRet / count);
 	console.log("Return", start);
 	// return portfolio.splice(portfolio.length - 112, 112);
-	return dataSelectingStocks;
+	return arrayOfDataSelectingStocks;
 }
 
 async function getNiftyCompaniesDataV2(

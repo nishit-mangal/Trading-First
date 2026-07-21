@@ -77,8 +77,23 @@ export async function stopLossStrategy(req, res) {
 }
 
 export async function getHistoricalDataForNiftyCompanies(req: any, res: any) {
-	const returnArray: any = await returnsForStrategyArrayV2();
-	// console.log("returnArray:", returnArray);
-	const obj = Object.fromEntries(returnArray);
-	return res.json({ data: obj });
+	let response = {
+		isSuccess: false,
+		message: "Internal Server Error",
+		data: []
+	};
+	try {
+		const returnArray: any = await returnsForStrategyArrayV2();
+		response.isSuccess = true;
+		response.message = "Successfully created Nifty Data.";
+		response.data = returnArray;
+		return res.json(response);
+	} catch (err: any) {
+		console.error(
+			"Error in fn::getHistoricalDataForNiftyCompanies.",
+			err.message ?? err
+		);
+		response.message = err.message ?? "Internal Server Error";
+		return res.json(response);
+	}
 }
