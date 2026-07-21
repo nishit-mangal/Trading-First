@@ -24,11 +24,12 @@ export async function callApiToGetHoldings(accessToken: string) {
 	}
 }
 
+// The below function is deprecated. Use callApiToGetHistoricalData function instead.
 export async function callApiToGetScriptDataInADateRange(
-	instrument_key,
-	interval,
-	to_date,
-	from_date
+	instrument_key: string,
+	interval: string,
+	to_date: string,
+	from_date: string
 ) {
 	let config = {
 		method: "get",

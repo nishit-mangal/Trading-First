@@ -15,4 +15,7 @@ historicalDataRouter.get("/nifty/monthly", getHistoricalMonthlyOHLCVDataNifty);
 historicalDataRouter.get("/nifty/index", getNifty50IndexData);
 historicalDataRouter.get("/graphs", compareNiftyWithStrategy);
 historicalDataRouter.get("/daily", stopLossStrategy);
-historicalDataRouter.get("/currNiftyFifty", getHistoricalDataForNiftyCompanies);
+historicalDataRouter.get(
+	"/nifty50CompaniesTrading",
+	getHistoricalDataForNiftyCompanies
+);

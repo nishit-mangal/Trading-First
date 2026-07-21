@@ -7,7 +7,7 @@ import {
 	fetchDataAndImplementstopLossStrategyDaily,
 	returnsForStrategyArrayV2
 } from "../handler/historicalDataHandler.js";
-import { callApiToGetScriptDataInADateRange } from "../handler/apiContainer.js";
+import { callApiToGetHistoricalData } from "../handler/apiContainer.js";
 
 export async function getHistoricalMonthlyOHLCVData(req, res) {
 	const instrument_key = "NSE_EQ|INE528G01035";
@@ -16,7 +16,7 @@ export async function getHistoricalMonthlyOHLCVData(req, res) {
 	const from_date = "2006-05-21";
 
 	try {
-		let response = await callApiToGetScriptDataInADateRange(
+		let response = await callApiToGetHistoricalData(
 			instrument_key,
 			interval,
 			to_date,
@@ -59,16 +59,33 @@ export async function getHistoricalMonthlyOHLCVDataNifty(req, res) {
 }
 
 export async function getNifty50IndexData(req, res) {
-	const response = await fetchNiftyMonthlyData();
+	const response = await fetchNiftyMonthlyData("2026-07-01", "2021-07-01");
 	return res.json({ data: response });
 }
 
 export async function compareNiftyWithStrategy(req, res) {
-	const strategyData = await generateStrategyDataAndcompareNifty();
-	// console.log("Response", strategyData);
-	return res.render("graphs", {
-		data: strategyData
-	});
+	let response = {
+		isSuccess: false,
+		message: "Internal Server Error",
+		data: {}
+	};
+	try {
+		const { toDate, fromDate } = req.body;
+		if (!toDate || !fromDate)
+			throw new Error("toDate and fromDate are required.");
+		const strategyData = await generateStrategyDataAndcompareNifty(
+			fromDate,
+			toDate
+		);
+		response.isSuccess = true;
+		response.message = "Successfully compared the returns.";
+		response.data = strategyData;
+		return res.send(response);
+	} catch (err: any) {
+		console.error("Error in fn::compareNiftyWithStrategy.", err.message ?? err);
+		response.message = err.message ?? "Internal Server Error.";
+		return res.send(response);
+	}
 }
 
 export async function stopLossStrategy(req, res) {
@@ -79,14 +96,14 @@ export async function stopLossStrategy(req, res) {
 export async function getHistoricalDataForNiftyCompanies(req: any, res: any) {
 	let response = {
 		isSuccess: false,
-		message: "Internal Server Error",
-		data: []
+		message: "Internal Server Error"
 	};
 	try {
-		const returnArray: any = await returnsForStrategyArrayV2();
+		await returnsForStrategyArrayV2("2026-07-01", "2021-07-01");
 		response.isSuccess = true;
-		response.message = "Successfully created Nifty Data.";
-		response.data = returnArray;
+		response.message =
+			"Successfully created Nifty Data trading data. See logs.";
+		// response.data = returnArray;
 		return res.json(response);
 	} catch (err: any) {
 		console.error(

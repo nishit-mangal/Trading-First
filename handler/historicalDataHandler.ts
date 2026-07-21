@@ -7,10 +7,7 @@ import {
 	IStockNameReturn
 } from "../interfaces/historicalDataHandler.js";
 import type { INifty50Companies } from "../interfaces/niftyCompaniesInterfaces.js";
-import {
-	callApiToGetHistoricalData,
-	callApiToGetScriptDataInADateRange
-} from "./apiContainer.js";
+import { callApiToGetHistoricalData } from "./apiContainer.js";
 
 export function filterHistoricalData(candles) {
 	// console.log(candles)
@@ -75,7 +72,7 @@ async function callApiToGetNiftyData(to, from, candleTenure) {
 		const to_date = to;
 		const from_date = from;
 
-		let candleForStock = await callApiToGetScriptDataInADateRange(
+		let candleForStock = await callApiToGetHistoricalData(
 			instrument_key,
 			interval,
 			to_date,
@@ -296,12 +293,21 @@ export async function returnsForStrategyArray() {
 	return portfolio.splice(portfolio.length - 112, 112);
 }
 
-export async function generateStrategyDataAndcompareNifty() {
-	const strategyArrayData = await returnsForStrategyArray();
-	let niftyFiftyArrayData = await fetchNiftyDataAndReturnMonthlyReturns();
-	niftyFiftyArrayData = niftyFiftyArrayData.reverse();
-	// console.log("Stragtegy Array: ", strategyArrayData)
-	// console.log("Nifty Array: ", niftyFiftyArrayData)
+export async function generateStrategyDataAndcompareNifty(
+	fromDate: string,
+	toDate: string
+) {
+	const strategyArrayData: IStockDateReturn[] = await returnsForStrategyArrayV2(
+		toDate,
+		fromDate
+	);
+	let niftyFiftyArrayData: IStockDateReturn[] =
+		await fetchNifty50MonthlyReturns(toDate, fromDate);
+	niftyFiftyArrayData = niftyFiftyArrayData.slice(
+		1,
+		niftyFiftyArrayData.length
+	);
+
 	let data = {
 		niftyArray: [],
 		strategyArray: []
@@ -310,53 +316,67 @@ export async function generateStrategyDataAndcompareNifty() {
 	let startNifty = 100;
 	let startStrategy = 100;
 
-	for (let i = 0; i < 112; i++) {
-		let tempStrategyObj: any = {};
+	for (
+		let i = 0;
+		i < Math.min(strategyArrayData.length, niftyFiftyArrayData.length);
+		i++
+	) {
+		startNifty *= 1 + niftyFiftyArrayData[i].return / 100;
 		let tempNiftyObj: any = {};
-		startNifty *= 1 + niftyFiftyArrayData[i];
 		tempNiftyObj.x = i + 1;
 		tempNiftyObj.y = startNifty;
-		console.log(tempNiftyObj, ",");
 		data.niftyArray.push(tempNiftyObj);
 
-		startStrategy *= 1 + strategyArrayData[i] / 100;
+		startStrategy *= 1 + strategyArrayData[i].return / 100;
+		let tempStrategyObj: any = {};
 		tempStrategyObj.x = i + 1;
 		tempStrategyObj.y = startStrategy;
 		data.strategyArray.push(tempStrategyObj);
 	}
 
-	console.log("Nifty Array Length", niftyFiftyArrayData.length);
-	console.log("Strategy Array Length", strategyArrayData.length);
 	return data;
 }
 
-export async function fetchNiftyMonthlyData() {
+export async function fetchNiftyMonthlyData(
+	to_date: string,
+	from_date: string
+) {
 	const instrument_key = "NSE_INDEX|Nifty%2050";
-	const interval = "month";
-	const to_date = "2026-05-21";
-	const from_date = "2016-11-04";
-
-	let niftyData = await callApiToGetScriptDataInADateRange(
+	const interval = UNIT_VALUES.MONTHS;
+	let niftyData: any[] = await callApiToGetHistoricalData(
 		instrument_key,
 		interval,
 		to_date,
 		from_date
 	);
-
-	return niftyData ? niftyData : null;
+	if (niftyData.length === 0)
+		throw new Error(
+			"Error in fn::fetchNiftyMonthlyData.\nNo nifty fifty data received."
+		);
+	return niftyData;
 }
 
-async function fetchNiftyDataAndReturnMonthlyReturns() {
-	const niftyData = await fetchNiftyMonthlyData();
-	// console.log("nifty Data: ", niftyData)
-	let niftyReturnArray = [];
-	for (let candle of niftyData.candles) {
-		let returns;
-		returns = (candle[4] - candle[1]) / candle[1];
-		niftyReturnArray.push(returns);
+async function fetchNifty50MonthlyReturns(toDate: string, fromDate: string) {
+	let niftyData: any[] = await fetchNiftyMonthlyData(toDate, fromDate);
+	niftyData = niftyData.reverse();
+
+	let niftyReturnArray: IStockDateReturn[] = [];
+	for (let i = 0; i < niftyData.length; i++) {
+		const candle = niftyData[i];
+
+		const dateMod = new Date(candle[0]);
+		const parsedDate = `${dateMod.getFullYear()}-${
+			dateMod.getMonth() + 1
+		}-${dateMod.getDate()}`;
+		const final = candle[4];
+		const intial = i > 0 ? niftyData[i - 1][4] : candle[1];
+		const returnObj: IStockDateReturn = {
+			date: parsedDate,
+			return: ((final - intial) / intial) * 100
+		};
+		niftyReturnArray.push(returnObj);
 	}
-	// console.log("Return", start);
-	return niftyReturnArray.splice(0, 112);
+	return niftyReturnArray;
 }
 
 /******************############     implementation of stop loss strategy        ############********************/
@@ -534,11 +554,13 @@ function stopLossHit(prevPortfolio, month, weeklyReturnsMap) {
 /***********************#############################################******************************** */
 
 export async function returnsForStrategyArrayV2(
+	startDate: string,
+	endDate: string,
 	backtrackingTenure: number = 3
 ) {
 	let response: ICandleForStock[] = await getNiftyCompaniesDataV2(
-		"2026-07-20",
-		"2015-01-01",
+		startDate,
+		endDate,
 		UNIT_VALUES.MONTHS,
 		backtrackingTenure
 	);
@@ -558,7 +580,7 @@ export async function returnsForStrategyArrayV2(
 		arrayOfDataSelectingStocks,
 		mapOfCompanyReturns
 	);
-	console.log("portfolio:", portfolio);
+	// console.log("portfolio:", portfolio);
 	let start = 100;
 	let i = 1;
 	let count = 0;
@@ -570,20 +592,12 @@ export async function returnsForStrategyArrayV2(
 		start *= ret;
 		count++;
 		avgRet += returns;
-		console.log(
-			"Month:",
-			monthReturn.date,
-			"Start: ",
-			start,
-			"Month Ret: ",
-			monthReturn
-		);
 		i++;
 	}
-	console.log("Avg Return:", avgRet / count);
-	console.log("Return", start);
+	// console.log("Avg Return:", avgRet / count);
+	// console.log("Return", start);
 	// return portfolio.splice(portfolio.length - 112, 112);
-	return arrayOfDataSelectingStocks;
+	return portfolio;
 }
 
 async function getNiftyCompaniesDataV2(

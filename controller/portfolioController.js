@@ -3,8 +3,8 @@ import {
 	sortHoldingData
 } from "../handler/portfolioHandler.js";
 import {
-	callApiToGetHoldings,
-	callApiToGetScriptDataInADateRange
+	callApiToGetHistoricalData,
+	callApiToGetHoldings
 } from "../handler/apiContainer.js";
 import { redisClient } from "../Clients/clients.js";
 import { CACHE_NAMES } from "../Constants/constants.js";
@@ -61,7 +61,7 @@ export async function getHoldings(req, res) {
 			}
 
 			//fetch 1 year Data
-			let oneYearData = await callApiToGetScriptDataInADateRange(
+			let oneYearData = await callApiToGetHistoricalData(
 				stock.instrumentToken,
 				"day",
 				to_date,
